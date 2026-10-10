@@ -1,56 +1,51 @@
-# Welcome to your Expo app 👋
+# jobpilot
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Bewerbungen im Blick behalten: eine App für iOS, Android und Web, mit der man die eigene Jobsuche als Pipeline verwaltet, von der Bewerbung bis zum Angebot.
 
-## Get started
+> Das Projekt befindet sich im Aufbau. Was geplant ist, steht in der [Roadmap](ROADMAP.md).
 
-1. Install dependencies
+## Funktionen
 
-   ```bash
-   npm install
-   ```
+- Übersicht mit Kennzahlen (aktive Bewerbungen, Gespräche, Angebote) und dem nächsten Schritt
+- Bewerbungsliste mit Suche und Filter nach Status
+- Bewerbungen anlegen und den Status aktualisieren
+- Hell- und Dunkelmodus, native Tabs auf iOS und Android, eigene Navigation im Web
 
-2. Start the app
+## Tech-Stack
 
-   ```bash
-   npx expo start
-   ```
+- [Expo](https://expo.dev) SDK 57, React Native 0.86, React 19 mit React Compiler
+- Expo Router (dateibasiertes Routing, typisierte Routen, native Tabs)
+- TypeScript (strict)
+- Jest mit `jest-expo` und React Native Testing Library
+- ESLint und Prettier, CI über GitHub Actions
 
-In the output, you'll find options to open the app in a
+## Projektstruktur
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+src/
+  app/          Routen (Expo Router) – jede Datei ist ein Screen
+  domain/       reine Logik ohne React: Typen, Status, Filter, Kennzahlen
+  features/     Feature-Module mit Komponenten und State (z. B. applications/)
+  ui/           wiederverwendbare Bausteine (Sheet, Formularfeld, Suche, Tabs)
+  theme/        Farben für Hell und Dunkel, Hooks für das Farbschema
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Die Geschäftslogik liegt bewusst in `domain/`. Sie ist unabhängig von React und der Oberfläche und deshalb einfach zu testen.
 
-### Other setup steps
+## Starten
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Voraussetzung: Node.js 22
 
-## Learn more
+```bash
+npm install
+npm start          # Dev-Server, dann i (iOS), a (Android) oder w (Web)
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Qualität
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm run lint       # ESLint und Prettier
+npm run typecheck  # TypeScript
+npm test           # Jest
+npm run check      # alles zusammen, wie in der CI
+```
