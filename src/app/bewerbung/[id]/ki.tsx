@@ -8,6 +8,7 @@ import { DRAFT_KINDS, DRAFT_LABELS, type AiResponse, type DraftKind } from '@/do
 import { NotFound } from '@/features/applications/components/not-found';
 import { callAi } from '@/features/ai/client';
 import { ensureAiConsent } from '@/features/ai/consent';
+import { isDemo } from '@/features/demo/mode';
 import { FIT_LABELS, draftAsText, matchAsText, preparationAsText } from '@/features/ai/format';
 import { useTheme } from '@/theme/use-theme';
 import { Button } from '@/ui/button';
@@ -166,17 +167,20 @@ export default function AssistantScreen() {
             value={kind}
             onChange={setKind}
           />
-          <FormField
-            label="Worauf soll der Text eingehen? (optional)"
-            value={context}
-            onChangeText={setContext}
-            placeholder={
-              kind === 'dankeschoen'
-                ? 'z. B. Gespräch über die Migration auf Next.js, nettes Team'
-                : 'z. B. Wechselmotivation, frühester Starttermin'
-            }
-            multiline
-          />
+          {/* Freier Text ist in der Demo gesperrt – der Server nimmt dort nur Demo-Inhalte an */}
+          {isDemo ? null : (
+            <FormField
+              label="Worauf soll der Text eingehen? (optional)"
+              value={context}
+              onChangeText={setContext}
+              placeholder={
+                kind === 'dankeschoen'
+                  ? 'z. B. Gespräch über die Migration auf Next.js, nettes Team'
+                  : 'z. B. Wechselmotivation, frühester Starttermin'
+              }
+              multiline
+            />
+          )}
         </View>
       ) : null}
 

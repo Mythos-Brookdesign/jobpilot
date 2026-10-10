@@ -16,7 +16,9 @@
     "check": "npm run lint && npm run typecheck && npm test",
     "db:generate": "drizzle-kit generate",
     "postinstall": "patch-package",
-    "web:preview": "expo export --platform web && expo serve"
+    "web:preview": "expo export --platform web --clear && expo serve",
+    "web:demo": "EXPO_PUBLIC_DEMO=1 expo export --platform web --clear",
+    "deploy:web": "EXPO_PUBLIC_DEMO=1 expo export --platform web --clear && npx eas-cli@latest deploy --prod --environment production"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

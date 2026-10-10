@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useLive, useRepositories } from '@/db/hooks';
 import { MAX_PROFILE_CHARS } from '@/domain/ai';
 import { revokeAiConsent } from '@/features/ai/consent';
+import { isDemo } from '@/features/demo/mode';
 import { useTheme } from '@/theme/use-theme';
 import { Button } from '@/ui/button';
 import { FormField } from '@/ui/form-field';
@@ -31,10 +32,15 @@ export function AiSettings() {
         onChangeText={setDraft}
         placeholder="Lebenslauf oder Kurzprofil als Text: Erfahrung, Stationen, Technologien, Wünsche"
         multiline
+        editable={!isDemo}
         error={
           tooLong ? `Höchstens ${MAX_PROFILE_CHARS.toLocaleString('de-DE')} Zeichen` : undefined
         }
-        hint="Bleibt auf deinem Gerät. Für Abgleich und Anschreiben wird es mit der jeweiligen Anfrage an Claude gesendet."
+        hint={
+          isDemo
+            ? 'In der Demo ist ein Beispielprofil hinterlegt.'
+            : 'Bleibt auf deinem Gerät. Für Abgleich und Anschreiben wird es mit der jeweiligen Anfrage an Claude gesendet.'
+        }
       />
       <View style={styles.row}>
         <Button

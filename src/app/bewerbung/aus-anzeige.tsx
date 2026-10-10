@@ -4,10 +4,12 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 
 import { useRepositories } from '@/db/hooks';
 import { MAX_POSTING_CHARS, type AiResponse } from '@/domain/ai';
+import { DEMO_POSTING } from '@/domain/demo';
 import { ApplicationForm } from '@/features/applications/components/application-form';
 import { callAi } from '@/features/ai/client';
 import { ensureAiConsent } from '@/features/ai/consent';
 import { extractionToForm } from '@/features/ai/format';
+import { isDemo } from '@/features/demo/mode';
 import { useTheme } from '@/theme/use-theme';
 import { Button } from '@/ui/button';
 import { FormField } from '@/ui/form-field';
@@ -24,7 +26,8 @@ export default function FromPostingScreen() {
   const router = useRouter();
   const repositories = useRepositories();
   const goBack = useGoBack('/bewerbungen');
-  const [posting, setPosting] = useState('');
+  // In der Web-Demo nur mit der Beispiel-Anzeige (der Server lehnt andere Texte ab)
+  const [posting, setPosting] = useState(isDemo ? DEMO_POSTING : '');
   const [step, setStep] = useState<Step>({ kind: 'input' });
 
   async function analyze() {
@@ -87,9 +90,14 @@ export default function FromPostingScreen() {
         onChangeText={setPosting}
         placeholder="Anzeige kopieren und hier einfügen"
         multiline
-        autoFocus
+        autoFocus={!isDemo}
+        editable={!isDemo}
         error={step.kind === 'input' ? step.error : undefined}
-        hint={`${posting.length.toLocaleString('de-DE')} / ${MAX_POSTING_CHARS.toLocaleString('de-DE')} Zeichen`}
+        hint={
+          isDemo
+            ? 'In der Demo mit einer Beispiel-Anzeige – in der App fügst du eigene Anzeigen ein.'
+            : `${posting.length.toLocaleString('de-DE')} / ${MAX_POSTING_CHARS.toLocaleString('de-DE')} Zeichen`
+        }
       />
       {loading ? (
         <View style={styles.loading} accessibilityLiveRegion="polite">

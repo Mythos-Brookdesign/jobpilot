@@ -14,6 +14,7 @@ type FormFieldProps = Pick<
   | 'multiline'
   | 'returnKeyType'
   | 'autoFocus'
+  | 'editable'
 > & {
   label: string;
   /** Fehlermeldung unter dem Feld; färbt den Rahmen */
