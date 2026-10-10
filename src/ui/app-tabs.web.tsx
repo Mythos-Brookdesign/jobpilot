@@ -25,6 +25,9 @@ export default function AppTabs() {
           <TabTrigger name="bewerbungen" href="/bewerbungen" asChild>
             <TabButton>Bewerbungen</TabButton>
           </TabTrigger>
+          <TabTrigger name="einstellungen" href="/einstellungen" asChild>
+            <TabButton>Einstellungen</TabButton>
+          </TabTrigger>
         </TabBar>
       </TabList>
       <TabSlot style={styles.slot} />

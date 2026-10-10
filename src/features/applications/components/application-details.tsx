@@ -6,9 +6,15 @@ import { useApplications } from '@/features/applications/applications-context';
 import { StatusBadge } from '@/features/applications/components/status-badge';
 import { useTheme } from '@/theme/use-theme';
 
-export function ApplicationDetails({ application }: { application: JobApplication }) {
+export function ApplicationDetails({
+  application,
+  onDelete,
+}: {
+  application: JobApplication;
+  onDelete: () => void;
+}) {
   const theme = useTheme();
-  const { updateApplicationStatus } = useApplications();
+  const { repository } = useApplications();
 
   return (
     <View>
@@ -24,7 +30,7 @@ export function ApplicationDetails({ application }: { application: JobApplicatio
               accessibilityLabel={STATUS_LABELS[status]}
               accessibilityState={{ selected }}
               key={status}
-              onPress={() => updateApplicationStatus(application.id, status)}
+              onPress={() => repository.changeStatus(application.id, status)}
               style={styles.option}>
               <StatusBadge status={status} />
               {selected ? (
@@ -38,6 +44,21 @@ export function ApplicationDetails({ application }: { application: JobApplicatio
           );
         })}
       </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onDelete}
+        style={({ pressed }) => [
+          styles.delete,
+          { borderColor: theme.backgroundSelected },
+          pressed && styles.pressed,
+        ]}>
+        <SymbolView
+          name={{ ios: 'trash', android: 'delete', web: 'delete' }}
+          tintColor={theme.danger}
+          size={16}
+        />
+        <Text style={[styles.deleteText, { color: theme.danger }]}>Bewerbung löschen</Text>
+      </Pressable>
     </View>
   );
 }
@@ -68,5 +89,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  delete: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 4,
+    paddingTop: 6,
+  },
+  deleteText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });

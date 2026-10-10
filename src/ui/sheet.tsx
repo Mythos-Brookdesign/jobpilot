@@ -32,7 +32,10 @@ export function Sheet({ visible, onClose, eyebrow, title, children }: SheetProps
           onPress={onClose}
           style={StyleSheet.absoluteFill}
         />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        {/* Höhenbegrenzung hier, damit sich 90 % auf den Bildschirm beziehen und nicht auf das Sheet selbst */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.container}>
           <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
             <View style={[styles.handle, { backgroundColor: theme.sheetHandle }]} />
             <View style={styles.header}>
@@ -67,10 +70,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  container: {
+    maxHeight: '90%',
+  },
   sheet: {
+    flexShrink: 1,
     width: '100%',
     maxWidth: 760,
-    maxHeight: '90%',
     alignSelf: 'center',
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,

@@ -1,35 +1,28 @@
-import { createContext, useContext, useState, type PropsWithChildren } from 'react';
+import { createContext, useContext, type PropsWithChildren } from 'react';
 
-import type { ApplicationStatus, JobApplication, NewApplication } from '@/domain/application';
-import { createDemoApplications } from '@/features/applications/demo-data';
+import type { ApplicationsRepository } from '@/db/applications-repository';
+import { useDatabase } from '@/db/database-provider';
+import { useLiveRows } from '@/db/use-live-rows';
+import type { JobApplication } from '@/domain/application';
 
-// Vorerst nur im Speicher – in Phase 1 übernimmt SQLite (siehe ROADMAP.md)
+// Eine Live-Abfrage für die ganze App: Jede Änderung in der Datenbank aktualisiert alle Screens.
+// Schreibzugriffe laufen direkt über das Repository.
 
 type ApplicationsContextValue = {
   applications: JobApplication[];
-  addApplication: (application: NewApplication) => void;
-  updateApplicationStatus: (id: string, status: ApplicationStatus) => void;
+  repository: ApplicationsRepository;
 };
 
 const ApplicationsContext = createContext<ApplicationsContextValue | null>(null);
 
+const WATCHED_TABLES = ['applications'] as const;
+
 export function ApplicationsProvider({ children }: PropsWithChildren) {
-  const [applications, setApplications] = useState(createDemoApplications);
-
-  function addApplication(application: NewApplication) {
-    setApplications((current) => [{ ...application, id: `${Date.now()}` }, ...current]);
-  }
-
-  function updateApplicationStatus(id: string, status: ApplicationStatus) {
-    setApplications((current) =>
-      current.map((application) =>
-        application.id === id ? { ...application, status } : application,
-      ),
-    );
-  }
+  const { applications: repository } = useDatabase();
+  const applications = useLiveRows(() => repository.listActive(), WATCHED_TABLES);
 
   return (
-    <ApplicationsContext.Provider value={{ applications, addApplication, updateApplicationStatus }}>
+    <ApplicationsContext.Provider value={{ applications, repository }}>
       {children}
     </ApplicationsContext.Provider>
   );

@@ -5,3 +5,5 @@ web-build/
 ios/
 android/
 package-lock.json
+drizzle/meta/
+drizzle/migrations.js

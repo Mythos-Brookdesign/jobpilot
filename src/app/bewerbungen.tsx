@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { filterApplications, type StatusFilter } from '@/domain/application';
+import { filterApplications, type JobApplication, type StatusFilter } from '@/domain/application';
 import { useApplications } from '@/features/applications/applications-context';
 import { ApplicationDetails } from '@/features/applications/components/application-details';
 import { ApplicationRow } from '@/features/applications/components/application-row';
@@ -13,15 +13,17 @@ import { SerifFont } from '@/theme/colors';
 import { useTheme } from '@/theme/use-theme';
 import { SearchField } from '@/ui/search-field';
 import { Sheet } from '@/ui/sheet';
+import { UndoBanner } from '@/ui/undo-banner';
 
 type ActiveSheet = { mode: 'create' } | { mode: 'details'; id: string } | null;
 
 export default function ApplicationsScreen() {
   const theme = useTheme();
-  const { applications } = useApplications();
+  const { applications, repository } = useApplications();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
+  const [deleted, setDeleted] = useState<JobApplication | null>(null);
 
   const visibleApplications = filterApplications(applications, { status: filter, query });
   const selectedApplication =
@@ -29,6 +31,17 @@ export default function ApplicationsScreen() {
       ? applications.find((application) => application.id === activeSheet.id)
       : undefined;
   const closeSheet = () => setActiveSheet(null);
+
+  function deleteApplication(application: JobApplication) {
+    repository.archive(application.id);
+    setActiveSheet(null);
+    setDeleted(application);
+  }
+
+  function undoDelete() {
+    if (deleted) repository.restore(deleted.id);
+    setDeleted(null);
+  }
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -72,6 +85,14 @@ export default function ApplicationsScreen() {
         </View>
         <StatusFilterBar value={filter} onChange={setFilter} />
 
+        {deleted ? (
+          <UndoBanner
+            message={`„${deleted.company}“ gelöscht`}
+            onUndo={undoDelete}
+            onDismiss={() => setDeleted(null)}
+          />
+        ) : null}
+
         <View style={styles.listHeading}>
           <Text style={[styles.listTitle, { color: theme.text }]}>
             {filter === 'all' ? 'Alle Einträge' : filterLabel(filter)}
@@ -96,9 +117,13 @@ export default function ApplicationsScreen() {
               tintColor={theme.textSecondary}
               size={27}
             />
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>Noch nichts gefunden</Text>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>
+              {applications.length === 0 ? 'Noch keine Bewerbungen' : 'Noch nichts gefunden'}
+            </Text>
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-              Passe deine Suche an oder füge eine Bewerbung hinzu.
+              {applications.length === 0
+                ? 'Tippe auf +, um deine erste Bewerbung anzulegen.'
+                : 'Passe deine Suche an oder füge eine Bewerbung hinzu.'}
             </Text>
           </View>
         )}
@@ -114,7 +139,10 @@ export default function ApplicationsScreen() {
         {activeSheet?.mode === 'create' ? (
           <NewApplicationForm onSaved={closeSheet} />
         ) : selectedApplication ? (
-          <ApplicationDetails application={selectedApplication} />
+          <ApplicationDetails
+            application={selectedApplication}
+            onDelete={() => deleteApplication(selectedApplication)}
+          />
         ) : null}
       </Sheet>
     </SafeAreaView>

@@ -59,6 +59,11 @@ export function findNextInterview(applications: JobApplication[]) {
   return applications.find((application) => application.status === 'interview');
 }
 
+/** Eindeutig genug für lokale Daten, ohne native Abhängigkeit */
+export function createId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 /** Lokaler Kalendertag als YYYY-MM-DD (toISOString allein würde in UTC umrechnen) */
 export function toLocalIsoDate(date: Date) {
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
