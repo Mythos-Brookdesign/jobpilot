@@ -2,7 +2,7 @@
 
 Ziel: Aus dem Klick-Prototyp wird eine App, die zeigt, wie ein Senior-Entwickler arbeitet. Dazu gehören Daten, die erhalten bleiben, durchdachte Architektur, echte native Funktionen, ein KI-Feature mit Nutzen, Tests und CI sowie eine Demo, die Recruiter ohne Installation ausprobieren können.
 
-Stand heute: Übersicht und Bewerbungsliste mit Suche und Filter, Anlegen, Status ändern. Die Daten liegen nur im Speicher (`useState`) und sind nach einem Neustart weg.
+Stand heute: Phase 0 ist abgeschlossen. Übersicht und Bewerbungsliste mit Suche und Filter, Anlegen, Status ändern. Die Daten liegen noch nur im Speicher (`useState`) und sind nach einem Neustart weg, das ändert Phase 1.
 
 ---
 
@@ -10,11 +10,11 @@ Stand heute: Übersicht und Bewerbungsliste mit Suche und Filter, Anlegen, Statu
 
 Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehen.
 
-- [ ] Bisherigen Stand committen (aktuell ist alles nach dem „Initial commit“ uncommittet)
-- [ ] Template-Reste entfernen: `hint-row`, `web-badge`, `ui/collapsible`, `scripts/reset-project.js`, ungenutzte Assets
-- [ ] Route `explore.tsx` in `bewerbungen.tsx` umbenennen
-- [ ] Eigenes Branding: App-Icon, Splash-Farbe (aktuell Expo-Blau `#208AEF`), Android-Icon-Hintergrund
-- [ ] Ordnerstruktur nach Features statt nach Dateityp:
+- [x] Bisherigen Stand committen
+- [x] Template-Reste entfernen: `hint-row`, `web-badge`, `ui/collapsible`, `scripts/reset-project.js`, ungenutzte Assets
+- [x] Route `explore.tsx` in `bewerbungen.tsx` umbenennen
+- [x] Eigenes Branding: App-Icon, Splash-Farbe (aktuell Expo-Blau `#208AEF`), Android-Icon-Hintergrund
+- [x] Ordnerstruktur nach Features statt nach Dateityp:
   ```
   src/
     app/                 # nur Routen (Expo Router)
@@ -28,10 +28,10 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
     ui/                  # wiederverwendbare Bausteine (Badge, Sheet, Button, FormField)
     theme/
   ```
-- [ ] Interne Schlüssel auf Englisch, Anzeigetexte über eine Zuordnung, z. B. `status: 'interview'` → „Gespräch“. Das ist die Voraussetzung für Mehrsprachigkeit und stabile Daten.
-- [ ] Farben vollständig über das Theme: Das Panel „Dein nächster Schritt“ und die Trennlinien haben aktuell feste helle Farben und passen nicht zum Dark Mode
-- [ ] Tooling: TypeScript `strict`, ESLint, Prettier, `jest-expo` und React Native Testing Library
-- [ ] GitHub Actions: `lint`, `tsc --noEmit` und `test` bei jedem Push und Pull Request
+- [x] Interne Schlüssel auf Englisch, Anzeigetexte über eine Zuordnung, z. B. `status: 'interview'` → „Gespräch“. Das ist die Voraussetzung für Mehrsprachigkeit und stabile Daten.
+- [x] Farben vollständig über das Theme: Das Panel „Dein nächster Schritt“ und die Trennlinien haben aktuell feste helle Farben und passen nicht zum Dark Mode
+- [x] Tooling: TypeScript `strict`, ESLint, Prettier, `jest-expo` und React Native Testing Library
+- [x] GitHub Actions: `lint`, `tsc --noEmit` und `test` bei jedem Push und Pull Request
 
 **Fertig, wenn:** Die CI ist grün, im Repo ist kein Template-Code mehr, und Dark Mode funktioniert durchgängig.
 
@@ -43,14 +43,14 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 
 ### Schema (erster Entwurf)
 
-| Tabelle | Wichtige Felder |
-| --- | --- |
-| `applications` | id, company, role, location, workMode (remote / hybrid / onsite), status, priority, source (LinkedIn, StepStone, Empfehlung …), jobUrl, salaryMin/Max, jobDescription, appliedAt, createdAt, updatedAt, archivedAt |
-| `status_events` | id, applicationId, from, to, at. Wird bei jeder Statusänderung automatisch geschrieben und ergibt die Timeline und die Statistiken. |
-| `contacts` | id, applicationId, name, role (Recruiter, Hiring Manager …), email, phone, linkedinUrl |
-| `notes` | id, applicationId, body, createdAt |
-| `appointments` | id, applicationId, type (Telefon, Video, vor Ort, Techn. Interview), startsAt, location/link, notes |
-| `reminders` | id, applicationId, kind, dueAt, notificationId, doneAt |
+| Tabelle         | Wichtige Felder                                                                                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `applications`  | id, company, role, location, workMode (remote / hybrid / onsite), status, priority, source (LinkedIn, StepStone, Empfehlung …), jobUrl, salaryMin/Max, jobDescription, appliedAt, createdAt, updatedAt, archivedAt |
+| `status_events` | id, applicationId, from, to, at. Wird bei jeder Statusänderung automatisch geschrieben und ergibt die Timeline und die Statistiken.                                                                                |
+| `contacts`      | id, applicationId, name, role (Recruiter, Hiring Manager …), email, phone, linkedinUrl                                                                                                                             |
+| `notes`         | id, applicationId, body, createdAt                                                                                                                                                                                 |
+| `appointments`  | id, applicationId, type (Telefon, Video, vor Ort, Techn. Interview), startsAt, location/link, notes                                                                                                                |
+| `reminders`     | id, applicationId, kind, dueAt, notificationId, doneAt                                                                                                                                                             |
 
 ### Architektur
 
@@ -72,9 +72,10 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 ## Phase 2 – Funktionsumfang
 
 ### Bewerbungen
+
 - [ ] **Eigene Detailseite** als Route `/bewerbung/[id]` statt eines Modals. Dadurch kann eine Benachrichtigung per Deep Link genau diesen Eintrag öffnen.
 - [ ] Bearbeiten aller Felder, Löschen, Archivieren
-- [ ] Erweiterte Pipeline: *Gemerkt → Beworben → Screening → Fachgespräch → Finale Runde → Angebot* sowie *Abgesagt / Zurückgezogen*
+- [ ] Erweiterte Pipeline: _Gemerkt → Beworben → Screening → Fachgespräch → Finale Runde → Angebot_ sowie _Abgesagt / Zurückgezogen_
 - [ ] **Timeline** auf der Detailseite aus Statusänderungen, Notizen und Terminen
 - [ ] Ansprechpartner und Notizen pro Bewerbung
 - [ ] Termine anlegen (Typ, Zeit, Link). Der nächste Termin erscheint auf der Übersicht.
@@ -83,16 +84,19 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 - [ ] Liste mit `FlatList` statt `map` in `ScrollView` (Performance bei vielen Einträgen)
 
 ### Übersicht (Dashboard)
+
 - [ ] „Heute fällig“: Erinnerungen und Termine der nächsten 7 Tage
 - [ ] Die Kennzahlen öffnen beim Antippen die gefilterte Liste
 
 ### Auswertung (neuer Tab „Insights“)
+
 - [ ] Funnel: wie viele Bewerbungen welche Stufe erreichen
 - [ ] Antwortquote, durchschnittliche Zeit bis zur ersten Rückmeldung, Erfolgsquote je Quelle
 - [ ] Aktivität pro Woche
 - Berechnung als reine, getestete Funktionen in `domain/insights.ts`
 
 ### Tablet und Web
+
 - [ ] Ab etwa 900 px Breite eine **Kanban-Ansicht** (Spalten je Status) sowie Liste und Detail nebeneinander
 
 **Fertig, wenn:** Eine Bewerbung lässt sich vom Merken bis zum Angebot vollständig abbilden und auswerten.
@@ -104,15 +108,17 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 **Technik:** `expo-notifications` mit lokalen, zeitgesteuerten Benachrichtigungen. Die funktionieren auch in Expo Go, Push vom Server ist nicht nötig.
 
 ### Regeln (in `domain/reminder-rules.ts`, einstellbar)
-| Auslöser | Erinnerung |
-| --- | --- |
+
+| Auslöser                                                        | Erinnerung                                                |
+| --------------------------------------------------------------- | --------------------------------------------------------- |
 | Status „Beworben“ und X Tage ohne Statusänderung (Standard: 10) | „Seit 10 Tagen keine Rückmeldung von {Firma}. Nachhaken?“ |
-| Termin angelegt | Am Vortag um 18 Uhr und 1 Stunde vorher |
-| Nach einem Gespräch | Am nächsten Tag: „Dankes-Mail an {Kontakt} senden?“ |
-| Angebot mit Frist | 2 Tage vor Fristende |
-| Eigene Erinnerung | frei wählbares Datum und Text |
+| Termin angelegt                                                 | Am Vortag um 18 Uhr und 1 Stunde vorher                   |
+| Nach einem Gespräch                                             | Am nächsten Tag: „Dankes-Mail an {Kontakt} senden?“       |
+| Angebot mit Frist                                               | 2 Tage vor Fristende                                      |
+| Eigene Erinnerung                                               | frei wählbares Datum und Text                             |
 
 ### Umsetzung
+
 - [ ] Tabelle `reminders` ist die Quelle der Wahrheit. Die gespeicherte `notificationId` dient zum Abbrechen und Neuplanen.
 - [ ] Ändern sich Status oder Termin, werden die Erinnerungen dieser Bewerbung neu berechnet. Das ist eine reine Funktion, die ein Soll und ein Ist vergleicht und deshalb gut testbar ist.
 - [ ] **Aktionen direkt in der Benachrichtigung** über Kategorien (`setNotificationCategoryAsync`): „Erledigt“, „In 3 Tagen erneut“
@@ -130,12 +136,14 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 Damit hebt sich jobpilot von üblichen Tutorial-Trackern ab, und es passt zu „Frag meinen Lebenslauf“ im Portfolio.
 
 ### Funktionen
+
 1. **Stellenanzeige übernehmen:** Text einfügen (oder URL). Claude extrahiert Firma, Position, Ort, Arbeitsmodell, Gehalt, geforderte Skills und Ansprechpartner als strukturiertes JSON. Daraus wird ein vorausgefülltes Formular, das man vor dem Speichern prüft.
 2. **Passung zum eigenen Profil:** Den Lebenslauf einmal hinterlegen. Die App zeigt passende Skills, Lücken und Punkte, die man im Gespräch betonen sollte.
 3. **Gesprächsvorbereitung:** wahrscheinliche Fragen zur Stelle und zum Tech-Stack, dazu Fragen, die man selbst stellen kann
 4. **Entwürfe:** Anschreiben, Nachfass-Mail, Dankes-Mail, jeweils mit Bezug auf die gespeicherte Bewerbung
 
 ### Architektur
+
 - **Der API-Key gehört nie in die App.** Die Aufrufe laufen über **Expo Router API Routes** (`src/app/api/*+api.ts`) auf **EAS Hosting**. Dafür muss `web.output` auf `"server"` umgestellt werden.
 - Eingaben mit `zod` prüfen, Ausgaben über Structured Outputs bzw. Tool Use als typisiertes JSON
 - Rate-Limit und Größenbegrenzung der Eingaben, Ausgabenlimit in der Anthropic Console
@@ -143,6 +151,7 @@ Damit hebt sich jobpilot von üblichen Tutorial-Trackern ab, und es passt zu „
 - Datenschutz: Vor der ersten Nutzung erklären, was an die API geht. Der Lebenslauf bleibt lokal und wird nur pro Anfrage mitgeschickt.
 
 ### Optional
+
 - [ ] **Teilen in die App:** eine Stellenanzeige aus LinkedIn oder dem Browser per „Teilen“ an jobpilot senden. Das braucht ein Config-Plugin (z. B. `expo-share-intent`) und einen Development Build.
 
 **Fertig, wenn:** Eine eingefügte Stellenanzeige ergibt in weniger als 10 Sekunden eine vorausgefüllte, korrigierbare Bewerbung.
