@@ -108,6 +108,7 @@ export function createBackupRepository(db: Database) {
             salaryMin: nullable(application.salaryMin),
             salaryMax: nullable(application.salaryMax),
             nextStep: nullable(application.nextStep),
+            jobDescription: nullable(application.jobDescription),
             archivedAt: null,
           };
           tx.insert(applications)

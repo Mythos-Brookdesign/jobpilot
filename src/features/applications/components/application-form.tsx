@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -30,6 +30,8 @@ type ApplicationFormProps = {
   submitLabel: string;
   onSubmit: (input: ApplicationInput) => void;
   onCancel: () => void;
+  /** Inhalt über dem Formular, scrollt mit (z. B. die Zusammenfassung einer Anzeige) */
+  header?: ReactNode;
 };
 
 /** Gemeinsames Formular für „Neue Bewerbung“ und „Bearbeiten“ */
@@ -38,6 +40,7 @@ export function ApplicationForm({
   submitLabel,
   onSubmit,
   onCancel,
+  header,
 }: ApplicationFormProps) {
   const theme = useTheme();
   const [values, setValues] = useState(initialValues);
@@ -63,6 +66,7 @@ export function ApplicationForm({
       keyboardShouldPersistTaps="handled"
       automaticallyAdjustKeyboardInsets
       showsVerticalScrollIndicator={false}>
+      {header}
       <FormField
         label="Unternehmen"
         value={values.company}
@@ -177,6 +181,14 @@ export function ApplicationForm({
         onChangeText={(text) => set('nextStep', text)}
         placeholder="z. B. Anschreiben bis Freitag fertigstellen"
         multiline
+      />
+      <FormField
+        label="Text der Stellenanzeige (optional)"
+        value={values.jobDescription}
+        onChangeText={(text) => set('jobDescription', text)}
+        placeholder="Hier einfügen – der KI-Assistent nutzt ihn für Abgleich, Vorbereitung und Anschreiben"
+        multiline
+        error={errors.jobDescription}
       />
 
       {hasErrors ? (

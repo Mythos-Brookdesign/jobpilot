@@ -23,6 +23,8 @@ export const applications = sqliteTable(
     salaryMin: integer('salary_min'),
     salaryMax: integer('salary_max'),
     nextStep: text('next_step'),
+    /** Text der Stellenanzeige – Grundlage für den KI-Assistenten */
+    jobDescription: text('job_description'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
     /** Gesetzt = gelöscht, lässt sich aber wiederherstellen */

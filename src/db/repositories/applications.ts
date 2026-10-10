@@ -25,6 +25,7 @@ function toColumns(input: ApplicationInput) {
     salaryMin: nullable(input.salaryMin),
     salaryMax: nullable(input.salaryMax),
     nextStep: nullable(input.nextStep),
+    jobDescription: nullable(input.jobDescription),
   };
 }
 
@@ -113,6 +114,14 @@ export function createApplicationsRepository(db: Database) {
         insertEvent(tx, id, current.status, to, timestamp);
         return true;
       });
+    },
+
+    /** Anzeigentext nachtragen, ohne die übrigen Felder anzufassen */
+    setJobDescription(id: string, text: string, now = new Date()) {
+      db.update(applications)
+        .set({ jobDescription: text.trim() || null, updatedAt: now.toISOString() })
+        .where(eq(applications.id, id))
+        .run();
     },
 
     /** Weiches Löschen: Eintrag verschwindet aus allen Listen, lässt sich aber zurückholen */

@@ -65,6 +65,14 @@ export default function RootLayout() {
             name="bewerbung/[id]/erinnerung"
             options={{ presentation: 'modal', title: 'Neue Erinnerung' }}
           />
+          <Stack.Screen
+            name="bewerbung/aus-anzeige"
+            options={{ presentation: 'modal', title: 'Aus Stellenanzeige' }}
+          />
+          <Stack.Screen
+            name="bewerbung/[id]/ki"
+            options={{ presentation: 'modal', title: 'KI-Assistent' }}
+          />
         </Stack>
         <ReminderService />
         <ToastHost />

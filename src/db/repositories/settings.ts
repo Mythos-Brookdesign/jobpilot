@@ -11,7 +11,11 @@ export type SettingKey =
   | 'reminders.appointments'
   | 'reminders.thankYou'
   /** Nutzer hat Benachrichtigungen in der App eingeschaltet (zusätzlich zur Systemerlaubnis) */
-  | 'reminders.notifications';
+  | 'reminders.notifications'
+  /** Lebenslauf bzw. Kurzprofil für den KI-Assistenten */
+  | 'profile.text'
+  /** Zustimmung, dass Inhalte an den KI-Dienst gesendet werden */
+  | 'ai.consent';
 
 /** Einfache Schlüssel-Wert-Einstellungen in derselben Datenbank */
 export function createSettingsRepository(db: Database) {

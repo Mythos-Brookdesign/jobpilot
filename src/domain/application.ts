@@ -73,6 +73,8 @@ export type JobApplication = {
   salaryMin?: number;
   salaryMax?: number;
   nextStep?: string;
+  /** Text der Stellenanzeige */
+  jobDescription?: string;
 };
 
 export type ApplicationInput = Omit<JobApplication, 'id'>;

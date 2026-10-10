@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { MAX_POSTING_CHARS } from '@/domain/ai';
 import {
   APPLICATION_STATUSES,
   PRIORITIES,
@@ -66,6 +67,7 @@ export type ApplicationFormValues = {
   salaryMin: string;
   salaryMax: string;
   nextStep: string;
+  jobDescription: string;
 };
 
 export type ApplicationFormField = keyof ApplicationFormValues;
@@ -84,6 +86,9 @@ const applicationSchema = z
     salaryMin: optionalEuro,
     salaryMax: optionalEuro,
     nextStep: optionalText,
+    jobDescription: optionalText.pipe(
+      z.string().max(MAX_POSTING_CHARS, 'Der Anzeigentext ist zu lang').optional(),
+    ),
   })
   .refine((v) => !v.salaryMin || !v.salaryMax || v.salaryMin <= v.salaryMax, {
     path: ['salaryMax'],
@@ -104,6 +109,7 @@ export function emptyApplicationForm(today: string): ApplicationFormValues {
     salaryMin: '',
     salaryMax: '',
     nextStep: '',
+    jobDescription: '',
   };
 }
 
@@ -121,6 +127,7 @@ export function applicationToForm(application: JobApplication): ApplicationFormV
     salaryMin: formatEuroInput(application.salaryMin),
     salaryMax: formatEuroInput(application.salaryMax),
     nextStep: application.nextStep ?? '',
+    jobDescription: application.jobDescription ?? '',
   };
 }
 
