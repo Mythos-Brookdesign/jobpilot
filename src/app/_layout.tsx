@@ -1,11 +1,11 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { DATABASE_LOCKED_MESSAGE } from '@/db/client';
 import { DatabaseProvider } from '@/db/database-provider';
-import { ApplicationsProvider } from '@/features/applications/applications-context';
 import { useSchemeName, useTheme } from '@/theme/use-theme';
-import AppTabs from '@/ui/app-tabs';
+import { ToastHost } from '@/ui/toast';
 
 // Splash stehen lassen, bis die Datenbank bereit ist
 SplashScreen.preventAutoHideAsync();
@@ -14,16 +14,54 @@ const hideSplash = () => SplashScreen.hide();
 
 export default function RootLayout() {
   const scheme = useSchemeName();
+  const theme = useTheme();
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  // Farben der Navigation (Header, Hintergründe) an das App-Theme anpassen
+  const navigationTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: theme.accentText,
+      background: theme.background,
+      card: theme.background,
+      text: theme.text,
+      border: theme.border,
+    },
+  };
 
   return (
-    <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navigationTheme}>
       <DatabaseProvider
         loading={null}
         renderError={(message) => <DatabaseError message={message} />}
         onSettled={hideSplash}>
-        <ApplicationsProvider>
-          <AppTabs />
-        </ApplicationsProvider>
+        <Stack
+          screenOptions={{
+            headerShadowVisible: false,
+            headerBackButtonDisplayMode: 'minimal',
+            headerTitleStyle: { fontWeight: '600' },
+            contentStyle: { backgroundColor: theme.background },
+          }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="bewerbung/[id]/index" options={{ title: '' }} />
+          <Stack.Screen
+            name="bewerbung/neu"
+            options={{ presentation: 'modal', title: 'Neue Bewerbung' }}
+          />
+          <Stack.Screen
+            name="bewerbung/[id]/bearbeiten"
+            options={{ presentation: 'modal', title: 'Bewerbung bearbeiten' }}
+          />
+          <Stack.Screen
+            name="bewerbung/[id]/termin"
+            options={{ presentation: 'modal', title: 'Termin' }}
+          />
+          <Stack.Screen
+            name="bewerbung/[id]/kontakt"
+            options={{ presentation: 'modal', title: 'Kontakt' }}
+          />
+        </Stack>
+        <ToastHost />
       </DatabaseProvider>
     </ThemeProvider>
   );
@@ -31,17 +69,22 @@ export default function RootLayout() {
 
 function DatabaseError({ message }: { message: string }) {
   const theme = useTheme();
+  const locked = message === DATABASE_LOCKED_MESSAGE;
   return (
     <View style={[styles.error, { backgroundColor: theme.background }]}>
       <Text style={[styles.errorTitle, { color: theme.text }]}>
-        Daten konnten nicht geladen werden
+        {locked ? 'Schon in einem anderen Tab geöffnet' : 'Daten konnten nicht geladen werden'}
       </Text>
       <Text style={[styles.errorText, { color: theme.textSecondary }]}>
-        Bitte starte die App neu. Bleibt der Fehler, hilft ein Update der App.
+        {locked
+          ? message
+          : 'Bitte starte die App neu. Bleibt der Fehler, hilft ein Update der App.'}
       </Text>
-      <Text selectable style={[styles.errorDetail, { color: theme.textSecondary }]}>
-        {message}
-      </Text>
+      {locked ? null : (
+        <Text selectable style={[styles.errorDetail, { color: theme.textSecondary }]}>
+          {message}
+        </Text>
+      )}
     </View>
   );
 }

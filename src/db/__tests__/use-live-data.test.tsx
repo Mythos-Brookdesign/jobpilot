@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 
-import { useLiveRows } from '@/db/use-live-rows';
+import { useLiveData } from '@/db/use-live-data';
 
 type ChangeListener = (event: { tableName: string }) => void;
 const mockListeners = new Set<ChangeListener>();
@@ -25,10 +25,10 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-describe('useLiveRows', () => {
+describe('useLiveData', () => {
   it('liest sofort beim ersten Rendern', async () => {
     const read = jest.fn(() => ['a']);
-    const { result } = await renderHook(() => useLiveRows(read, ['applications']));
+    const { result } = await renderHook(() => useLiveData(read, ['applications']));
 
     expect(result.current).toEqual(['a']);
   });
@@ -36,7 +36,7 @@ describe('useLiveRows', () => {
   it('liest nach vielen Änderungen nur einmal neu', async () => {
     let rows = ['a'];
     const read = jest.fn(() => rows);
-    const { result } = await renderHook(() => useLiveRows(read, ['applications']));
+    const { result } = await renderHook(() => useLiveData(read, ['applications']));
     const readsAfterMount = read.mock.calls.length;
 
     rows = ['a', 'b'];
@@ -49,7 +49,7 @@ describe('useLiveRows', () => {
 
   it('ignoriert Änderungen an anderen Tabellen', async () => {
     const read = jest.fn(() => ['a']);
-    await renderHook(() => useLiveRows(read, ['applications']));
+    await renderHook(() => useLiveData(read, ['applications']));
     const readsAfterMount = read.mock.calls.length;
 
     emit('status_events', 5);
@@ -58,8 +58,20 @@ describe('useLiveRows', () => {
     expect(read.mock.calls.length).toBe(readsAfterMount);
   });
 
+  it('liest sofort neu, wenn sich die Abhängigkeiten ändern', async () => {
+    const read = jest.fn((id: string) => [id]);
+    const { result, rerender } = await renderHook(
+      ({ id }: { id: string }) => useLiveData(() => read(id), ['applications'], [id]),
+      { initialProps: { id: 'a' } },
+    );
+    expect(result.current).toEqual(['a']);
+
+    await rerender({ id: 'b' });
+    expect(result.current).toEqual(['b']);
+  });
+
   it('meldet sich beim Unmount ab', async () => {
-    const { unmount } = await renderHook(() => useLiveRows(() => [], ['applications']));
+    const { unmount } = await renderHook(() => useLiveData(() => [], ['applications']));
     expect(mockListeners.size).toBe(1);
 
     await unmount();

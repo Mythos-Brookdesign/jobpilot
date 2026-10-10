@@ -4,12 +4,31 @@ import { useTheme } from '@/theme/use-theme';
 
 type FormFieldProps = Pick<
   TextInputProps,
-  'value' | 'onChangeText' | 'placeholder' | 'autoCapitalize' | 'returnKeyType'
+  | 'value'
+  | 'onChangeText'
+  | 'placeholder'
+  | 'autoCapitalize'
+  | 'autoComplete'
+  | 'keyboardType'
+  | 'inputMode'
+  | 'multiline'
+  | 'returnKeyType'
+  | 'autoFocus'
 > & {
   label: string;
+  /** Fehlermeldung unter dem Feld; färbt den Rahmen */
+  error?: string;
+  hint?: string;
 };
 
-export function FormField({ label, autoCapitalize = 'words', ...inputProps }: FormFieldProps) {
+export function FormField({
+  label,
+  error,
+  hint,
+  multiline,
+  autoCapitalize = 'sentences',
+  ...inputProps
+}: FormFieldProps) {
   const theme = useTheme();
 
   return (
@@ -17,19 +36,28 @@ export function FormField({ label, autoCapitalize = 'words', ...inputProps }: Fo
       <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
       <TextInput
         accessibilityLabel={label}
+        accessibilityHint={error ?? hint}
+        aria-invalid={!!error}
         autoCapitalize={autoCapitalize}
         placeholderTextColor={theme.textSecondary}
-        returnKeyType="next"
+        multiline={multiline}
+        textAlignVertical={multiline ? 'top' : 'center'}
         {...inputProps}
         style={[
           styles.input,
+          multiline && styles.multiline,
           {
             color: theme.text,
             backgroundColor: theme.background,
-            borderColor: theme.backgroundSelected,
+            borderColor: error ? theme.danger : theme.backgroundSelected,
           },
         ]}
       />
+      {error ? (
+        <Text style={[styles.message, { color: theme.danger }]}>{error}</Text>
+      ) : hint ? (
+        <Text style={[styles.message, { color: theme.textSecondary }]}>{hint}</Text>
+      ) : null}
     </View>
   );
 }
@@ -45,10 +73,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   input: {
-    height: 48,
+    minHeight: 48,
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 13,
-    fontSize: 14,
+    fontSize: 15,
+  },
+  multiline: {
+    minHeight: 96,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  message: {
+    fontSize: 12,
+    lineHeight: 17,
   },
 });

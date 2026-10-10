@@ -1,0 +1,174 @@
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+
+import { useLive, useRepositories } from '@/db/hooks';
+import { buildTimeline } from '@/domain/timeline';
+import { placeLabel } from '@/features/applications/components/application-row';
+import { Facts } from '@/features/applications/components/detail/facts';
+import {
+  AppointmentsSection,
+  ContactsSection,
+  NotesSection,
+  TimelineSection,
+} from '@/features/applications/components/detail/sections';
+import { StatusPicker } from '@/features/applications/components/detail/status-picker';
+import { NotFound } from '@/features/applications/components/not-found';
+import { SerifFont } from '@/theme/colors';
+import { useTheme } from '@/theme/use-theme';
+import { Button } from '@/ui/button';
+import { confirm } from '@/ui/dialogs';
+import { Screen } from '@/ui/screen';
+import { Section } from '@/ui/section';
+import { showToast } from '@/ui/toast';
+
+export default function ApplicationScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const theme = useTheme();
+  const repositories = useRepositories();
+  // Nach dem Löschen nicht kurz „nicht gefunden“ zeigen, während der Screen ausblendet
+  const [deleting, setDeleting] = useState(false);
+
+  const detail = useLive(
+    ({ applications, details }) => {
+      const application = applications.get(id);
+      if (!application) return undefined;
+      return {
+        application,
+        events: applications.statusEvents(id),
+        contacts: details.contacts(id),
+        notes: details.notes(id),
+        appointments: details.appointments(id),
+      };
+    },
+    ['applications', 'status_events', 'contacts', 'notes', 'appointments'],
+    [id],
+  );
+
+  if (!detail) return deleting ? null : <NotFound />;
+  const { application, events, contacts, notes, appointments } = detail;
+
+  async function remove() {
+    const confirmed = await confirm({
+      title: `${application.company} löschen?`,
+      message:
+        'Die Bewerbung verschwindet aus allen Listen. Du kannst das gleich rückgängig machen.',
+      confirmLabel: 'Löschen',
+    });
+    if (!confirmed) return;
+    setDeleting(true);
+    repositories.applications.archive(id);
+    router.back();
+    showToast({
+      message: `„${application.company}“ gelöscht`,
+      action: { label: 'Rückgängig', onPress: () => repositories.applications.restore(id) },
+    });
+  }
+
+  const place = placeLabel(application);
+
+  return (
+    <Screen>
+      <Stack.Screen
+        options={{
+          title: application.company,
+          headerRight: () => (
+            <View style={styles.headerAction}>
+              <Button
+                label="Bearbeiten"
+                variant="secondary"
+                compact
+                onPress={() =>
+                  router.push({ pathname: '/bewerbung/[id]/bearbeiten', params: { id } })
+                }
+              />
+            </View>
+          ),
+        }}
+      />
+
+      <View style={styles.header}>
+        <Text style={[styles.company, { color: theme.text }]}>{application.company}</Text>
+        <Text style={[styles.role, { color: theme.text }]}>{application.role}</Text>
+        {place ? <Text style={[styles.place, { color: theme.textSecondary }]}>{place}</Text> : null}
+      </View>
+
+      <StatusPicker
+        value={application.status}
+        onChange={(status) => repositories.applications.changeStatus(id, status)}
+      />
+
+      {application.nextStep ? (
+        <View style={[styles.nextStep, { backgroundColor: theme.accentSoft }]}>
+          <Text style={[styles.nextStepLabel, { color: theme.accentSoftEyebrow }]}>
+            NÄCHSTER SCHRITT
+          </Text>
+          <Text style={[styles.nextStepText, { color: theme.accentSoftText }]}>
+            {application.nextStep}
+          </Text>
+        </View>
+      ) : null}
+
+      <AppointmentsSection applicationId={id} appointments={appointments} />
+      <Section title="Eckdaten">
+        <Facts application={application} />
+      </Section>
+      <ContactsSection applicationId={id} contacts={contacts} />
+      <NotesSection applicationId={id} notes={notes} />
+      <TimelineSection items={buildTimeline({ events, notes, appointments })} />
+
+      <View style={styles.delete}>
+        <Button
+          label="Bewerbung löschen"
+          variant="danger"
+          icon={{ ios: 'trash', android: 'delete', web: 'delete' }}
+          onPress={remove}
+        />
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    gap: 4,
+    marginBottom: 16,
+  },
+  company: {
+    fontFamily: SerifFont,
+    fontSize: 32,
+    lineHeight: 38,
+  },
+  role: {
+    fontSize: 17,
+    lineHeight: 23,
+    fontWeight: '600',
+  },
+  place: {
+    fontSize: 14,
+  },
+  nextStep: {
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 16,
+    gap: 4,
+  },
+  nextStepLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  nextStepText: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  delete: {
+    marginTop: 32,
+  },
+  headerAction: {
+    // Im Browser setzt der Header keinen Randabstand
+    marginRight: Platform.OS === 'web' ? 16 : 0,
+  },
+});

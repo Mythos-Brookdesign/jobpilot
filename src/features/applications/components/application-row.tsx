@@ -1,21 +1,39 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { STATUS_LABELS, type JobApplication } from '@/domain/application';
+import {
+  STATUS_LABELS,
+  WORK_MODE_LABELS,
+  fromLocalIsoDate,
+  type JobApplication,
+} from '@/domain/application';
+import { formatAppointmentTime } from '@/domain/details';
 import { StatusBadge } from '@/features/applications/components/status-badge';
 import { AvatarColors } from '@/theme/colors';
 import { useSchemeName, useTheme } from '@/theme/use-theme';
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' }).format(
-    new Date(`${date}T12:00:00`),
+    fromLocalIsoDate(date),
   );
+}
+
+/** Ort und Arbeitsmodell ohne Dopplung wie „Remote · Remote“ */
+export function placeLabel(application: JobApplication) {
+  const mode = application.workMode ? WORK_MODE_LABELS[application.workMode] : undefined;
+  if (!application.location) return mode;
+  if (!mode || application.location.toLowerCase() === mode.toLowerCase())
+    return application.location;
+  return `${application.location} · ${mode}`;
 }
 
 export function ApplicationRow({
   application,
+  nextAppointment,
   onPress,
 }: {
   application: JobApplication;
+  /** ISO-Zeitpunkt des nächsten Termins, falls vorhanden */
+  nextAppointment?: string;
   onPress?: () => void;
 }) {
   const theme = useTheme();
@@ -26,7 +44,15 @@ export function ApplicationRow({
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`${application.company}, ${application.role}, Status ${STATUS_LABELS[application.status]}`}
+      accessibilityLabel={[
+        application.company,
+        application.role,
+        `Status ${STATUS_LABELS[application.status]}`,
+        application.priority === 'high' ? 'hohe Priorität' : undefined,
+        nextAppointment ? `Termin ${formatAppointmentTime(nextAppointment)}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(', ')}
       disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [
@@ -42,6 +68,9 @@ export function ApplicationRow({
       <View style={styles.details}>
         <View style={styles.titleLine}>
           <Text numberOfLines={1} style={[styles.company, { color: theme.text }]}>
+            {application.priority === 'high' ? (
+              <Text style={{ color: theme.accentText }}>● </Text>
+            ) : null}
             {application.company}
           </Text>
           <Text style={[styles.date, { color: theme.textSecondary }]}>
@@ -49,9 +78,16 @@ export function ApplicationRow({
           </Text>
         </View>
         <Text numberOfLines={1} style={[styles.role, { color: theme.textSecondary }]}>
-          {application.role} · {application.location}
+          {[application.role, placeLabel(application)].filter(Boolean).join(' · ')}
         </Text>
-        <StatusBadge status={application.status} />
+        <View style={styles.badges}>
+          <StatusBadge status={application.status} />
+          {nextAppointment ? (
+            <Text numberOfLines={1} style={[styles.appointment, { color: theme.accentText }]}>
+              {formatAppointmentTime(nextAppointment)}
+            </Text>
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );
@@ -65,6 +101,16 @@ const styles = StyleSheet.create({
     gap: 13,
     paddingVertical: 13,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  badges: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  appointment: {
+    flexShrink: 1,
+    fontSize: 11,
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.62,

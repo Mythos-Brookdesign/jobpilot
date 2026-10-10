@@ -6,12 +6,13 @@ Bewerbungen im Blick behalten: eine App für iOS, Android und Web, mit der man d
 
 ## Funktionen
 
-- Übersicht mit Kennzahlen (aktive Bewerbungen, Gespräche, Angebote) und dem nächsten Schritt
-- Bewerbungsliste mit Suche und Filter nach Status
-- Bewerbungen anlegen, Status aktualisieren, löschen mit „Rückgängig“
-- Lokale Speicherung in SQLite, jede Statusänderung wird protokolliert
-- Backup als JSON exportieren und importieren, Export als CSV für Excel
-- Hell- und Dunkelmodus, native Tabs auf iOS und Android, eigene Navigation im Web
+- **Pipeline:** Gemerkt → Beworben → Screening → Fachgespräch → Finale Runde → Angebot, dazu Abgesagt und Zurückgezogen; jeder Wechsel wird protokolliert
+- **Detailseite** je Bewerbung mit Eckdaten (Gehalt, Arbeitsmodell, Quelle, Link), Terminen, Kontakten, Notizen und Verlauf
+- **Übersicht** mit Kennzahlen, nächstem Termin und den Terminen der nächsten 7 Tage
+- **Liste** mit Suche, Filtern, Sortierung (gespeichert) und auf breiten Bildschirmen einer Board-Ansicht
+- **Auswertung:** Funnel, Antwortquote, Zeit bis zur Rückmeldung, Erfolg je Quelle, Aktivität pro Woche
+- Lokale Speicherung in SQLite, Backup als JSON (Import und Export), CSV-Export für Excel
+- Hell- und Dunkelmodus, native Tabs und Datums-Picker auf iOS und Android, responsive Web-Version
 
 ## Tech-Stack
 
@@ -27,9 +28,10 @@ Bewerbungen im Blick behalten: eine App für iOS, Android und Web, mit der man d
 ```
 src/
   app/          Routen (Expo Router) – jede Datei ist ein Screen
-  domain/       reine Logik ohne React: Typen, Status, Filter, Kennzahlen, Backup, CSV
-  db/           Schema, Repository, Datenbankanbindung, Live-Abfragen
-  features/     Feature-Module mit Komponenten und State (applications/, data-transfer/)
+  domain/       reine Logik ohne React: Status, Filter, Sortierung, Formulare, Auswertungen,
+                Timeline, Backup, CSV
+  db/           Schema, Repositories, Datenbankanbindung, Live-Abfragen
+  features/     Feature-Module: applications/, insights/, data-transfer/
   ui/           wiederverwendbare Bausteine (Sheet, Formularfeld, Suche, Tabs, Dialoge)
   theme/        Farben für Hell und Dunkel, Hooks für das Farbschema
 drizzle/        generierte SQL-Migrationen
@@ -39,14 +41,19 @@ patches/        Korrekturen an Abhängigkeiten (patch-package)
 ## Architektur
 
 - **Geschäftslogik in `domain/`:** unabhängig von React und Datenbank, deshalb einfach zu testen.
-- **Datenzugriff nur über das Repository** (`src/db/applications-repository.ts`). Es arbeitet mit jedem synchronen SQLite-Treiber von Drizzle. In der App ist das expo-sqlite, in den Tests better-sqlite3 im Arbeitsspeicher mit denselben Migrationen. Die Tests prüfen also echtes SQL, keine Mocks.
+- **Datenzugriff nur über Repositories** (`src/db/repositories/`). Es arbeitet mit jedem synchronen SQLite-Treiber von Drizzle. In der App ist das expo-sqlite, in den Tests better-sqlite3 im Arbeitsspeicher mit denselben Migrationen. Die Tests prüfen also echtes SQL, keine Mocks.
 - **Start:** Die Datenbank wird asynchron geöffnet und migriert, erst danach wird die App angezeigt (`DatabaseProvider`).
 - **Live-Aktualisierung:** `useLiveRows` hört auf Änderungen an Tabellen und liest gebündelt einmal neu, auch wenn ein Import hunderte Zeilen schreibt.
 - **Web:** SQLite läuft als WebAssembly in einem Worker und speichert im Origin Private File System. Dafür braucht der Server die Header `Cross-Origin-Opener-Policy` und `Cross-Origin-Embedder-Policy` (im Dev-Server über `metro.config.js`, für EAS Hosting in `app.json`).
 
 ### Patch für expo-sqlite
 
-`patches/expo-sqlite+57.0.4.patch` behebt einen Fehler in der Web-Variante von expo-sqlite: Die Länge synchroner Ergebnisse wurde mit `Uint8Array.set()` geschrieben. Dabei landete nur das unterste Byte im Puffer, und Ergebnisse über 255 Bytes wurden abgeschnitten. Der Patch wird bei `npm install` automatisch angewendet.
+`patches/expo-sqlite+57.0.4.patch` behebt zwei Fehler in der Web-Variante von expo-sqlite:
+
+1. Die Länge synchroner Ergebnisse wurde mit `Uint8Array.set()` geschrieben. Dabei landete nur das unterste Byte im Puffer, und Ergebnisse über 255 Bytes wurden abgeschnitten.
+2. Scheiterte das erste Öffnen, weil die Datei noch belegt war (z. B. beim Neuladen), blieb der Worker in einem halb initialisierten Zustand, und jeder weitere Versuch endete in „Invalid VFS state“.
+
+Der Patch wird bei `npm install` automatisch angewendet.
 
 ## Starten
 

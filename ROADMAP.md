@@ -2,7 +2,7 @@
 
 Ziel: Aus dem Klick-Prototyp wird eine App, die zeigt, wie ein Senior-Entwickler arbeitet. Dazu gehören Daten, die erhalten bleiben, durchdachte Architektur, echte native Funktionen, ein KI-Feature mit Nutzen, Tests und CI sowie eine Demo, die Recruiter ohne Installation ausprobieren können.
 
-Stand heute: Phase 0 und 1 sind abgeschlossen. Bewerbungen werden in SQLite gespeichert (iOS, Android und Browser), mit Statusverlauf, Löschen mit Rückgängig sowie Export und Import.
+Stand heute: Phase 0 bis 2 sind abgeschlossen. Bewerbungen werden in SQLite gespeichert (iOS, Android und Browser) – mit erweiterter Pipeline, Detailseite, Kontakten, Notizen, Terminen, Auswertung, Board-Ansicht sowie Export und Import.
 
 ---
 
@@ -55,48 +55,59 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 - [x] **Web:** SQLite läuft auch im Browser (WebAssembly, Daten in OPFS). Dafür nötig waren:
   - Metro-Konfiguration für `.wasm` und die Header COOP/COEP (Dev-Server und `app.json` für EAS Hosting)
   - asynchrones Öffnen, weil ein synchrones Öffnen beim Laden des Moduls den Worker blockiert
-  - ein Patch für einen Fehler in expo-sqlite 57.0.4 (`patches/`): synchrone Ergebnisse über 255 Bytes wurden abgeschnitten
+  - ein Patch für einen Fehler in expo-sqlite 57.0.4 (`patches/`): synchrone Ergebnisse über 255 Bytes wurden abgeschnitten (ein zweiter folgte in Phase 2)
 
 ### Bewusst verschoben
 
 - Tabellen `contacts`, `notes`, `appointments`, `reminders` kommen mit den Phasen, die sie brauchen (2 und 3), jeweils als eigene Migration
 - Zusätzliche Felder für `applications` (Arbeitsmodell, Quelle, Gehalt, Link …) kommen mit dem Bearbeiten-Formular in Phase 2
 - `expo-sqlite/kv-store` für Einstellungen kommt mit der Einstellungsseite für Erinnerungen in Phase 3
-- Der expo-sqlite-Fehler sollte als Issue bzw. Pull Request an Expo gemeldet werden. Danach kann der Patch entfallen.
+- Die beiden expo-sqlite-Fehler sollten als Issue bzw. Pull Request an Expo gemeldet werden. Danach kann der Patch entfallen.
 
 ---
 
-## Phase 2 – Funktionsumfang
+## Phase 2 – Funktionsumfang ✅
 
 ### Bewerbungen
 
-- [ ] **Eigene Detailseite** als Route `/bewerbung/[id]` statt eines Modals. Dadurch kann eine Benachrichtigung per Deep Link genau diesen Eintrag öffnen.
-- [ ] Bearbeiten aller Felder, Löschen, Archivieren
-- [ ] Erweiterte Pipeline: _Gemerkt → Beworben → Screening → Fachgespräch → Finale Runde → Angebot_ sowie _Abgesagt / Zurückgezogen_
-- [ ] **Timeline** auf der Detailseite aus Statusänderungen, Notizen und Terminen
-- [ ] Ansprechpartner und Notizen pro Bewerbung
-- [ ] Termine anlegen (Typ, Zeit, Link). Der nächste Termin erscheint auf der Übersicht.
-- [ ] Link zur Stellenanzeige, Gehaltsrahmen, Arbeitsmodell, Priorität, Quelle
-- [ ] Sortierung (neueste, Priorität, nächster Termin); die zuletzt gewählte Sortierung und der Filter bleiben gespeichert
-- [ ] Liste mit `FlatList` statt `map` in `ScrollView` (Performance bei vielen Einträgen)
+- [x] **Eigene Detailseite** als Route `/bewerbung/[id]` – Grundlage für Deep Links aus Benachrichtigungen (Phase 3)
+- [x] Bearbeiten aller Felder in einem gemeinsamen Formular für „Neu“ und „Bearbeiten“, Validierung mit zod und Meldung pro Feld
+- [x] Löschen mit „Rückgängig“ als Hinweis über allen Screens
+- [x] Erweiterte Pipeline: _Gemerkt → Beworben → Screening → Fachgespräch → Finale Runde → Angebot_ sowie _Abgesagt / Zurückgezogen_; Status direkt auf der Detailseite wählbar
+- [x] **Timeline** aus Statusänderungen, Notizen und Terminen
+- [x] Kontakte (mit E-Mail, Anruf, LinkedIn) und Notizen pro Bewerbung
+- [x] Termine (Art, Zeitpunkt, Ort/Link, Notizen) mit nativem Datums-Picker auf iOS, Android und im Browser
+- [x] Link zur Stellenanzeige, Gehaltsrahmen, Arbeitsmodell, Priorität, Quelle (mit Vorschlägen)
+- [x] Filter nach Gruppen mit Anzahl, Sortierung (neueste, Priorität, nächster Termin); beides bleibt gespeichert
+- [x] Liste mit `FlatList`
 
 ### Übersicht (Dashboard)
 
-- [ ] „Heute fällig“: Erinnerungen und Termine der nächsten 7 Tage
-- [ ] Die Kennzahlen öffnen beim Antippen die gefilterte Liste
+- [x] Nächster Termin im Fokus, darunter die Termine der nächsten 7 Tage
+- [x] Die Kennzahlen öffnen die passend gefilterte Liste
 
-### Auswertung (neuer Tab „Insights“)
+### Auswertung (neuer Tab)
 
-- [ ] Funnel: wie viele Bewerbungen welche Stufe erreichen
-- [ ] Antwortquote, durchschnittliche Zeit bis zur ersten Rückmeldung, Erfolgsquote je Quelle
-- [ ] Aktivität pro Woche
-- Berechnung als reine, getestete Funktionen in `domain/insights.ts`
+- [x] Funnel nach höchster erreichter Stufe (eine Absage nach dem Fachgespräch zählt beim Fachgespräch mit)
+- [x] Antwortquote, durchschnittliche Zeit bis zur ersten Rückmeldung, Erfolg je Quelle
+- [x] Abgeschickte Bewerbungen pro Kalenderwoche
+- Berechnung als reine, getestete Funktionen in `domain/insights.ts`; Diagramme ohne Bibliothek, Farben auf Kontrast geprüft
 
 ### Tablet und Web
 
-- [ ] Ab etwa 900 px Breite eine **Kanban-Ansicht** (Spalten je Status) sowie Liste und Detail nebeneinander
+- [x] Ab 900 px Breite eine **Board-Ansicht** (Spalte je Status)
+- [x] Responsive Web-Navigation
 
-**Fertig, wenn:** Eine Bewerbung lässt sich vom Merken bis zum Angebot vollständig abbilden und auswerten.
+### Datenbank
+
+- [x] Migration `0001` mit neuen Feldern und Tabellen; bestehende Daten werden übernommen (inkl. Umbenennung „sent“ → „applied“), per Test gegen echte Daten aus Phase 1 abgesichert
+- [x] Backup-Format Version 2 mit Kontakten, Notizen und Terminen; Backups der Version 1 werden beim Import umgewandelt
+- [x] Zweiter Patch für expo-sqlite: Nach einem fehlgeschlagenen Öffnen (Datei noch von der vorherigen Seite belegt) war die Datenbank bis zum Neuladen unbrauchbar. Jetzt wird das Öffnen wiederholt; ist die App in einem zweiten Tab offen, gibt es eine verständliche Meldung.
+
+### Bewusst verschoben
+
+- Liste und Detail nebeneinander auf breiten Bildschirmen (Master-Detail) – das Board deckt den Überblick ab; kommt bei Bedarf in Phase 5 mit der Web-Demo
+- Status per Drag & Drop auf dem Board ändern – der Status lässt sich auf der Detailseite mit einem Tippen setzen
 
 ---
 

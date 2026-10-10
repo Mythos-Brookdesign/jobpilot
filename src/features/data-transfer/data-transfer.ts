@@ -1,4 +1,4 @@
-import type { ApplicationsRepository } from '@/db/applications-repository';
+import type { Repositories } from '@/db/repositories';
 import { toLocalIsoDate } from '@/domain/application';
 import { parseBackup, serializeBackup } from '@/domain/backup';
 import { toCsv } from '@/domain/csv';
@@ -7,24 +7,24 @@ import { confirm, notify } from '@/ui/dialogs';
 
 const today = () => toLocalIsoDate(new Date());
 
-export async function exportBackupFile(repository: ApplicationsRepository) {
+export async function exportBackupFile({ backup }: Repositories) {
   await shareFile({
     name: `jobpilot-backup-${today()}.json`,
-    content: serializeBackup(repository.exportBackup()),
+    content: serializeBackup(backup.export()),
     mimeType: 'application/json',
   });
 }
 
-export async function exportCsvFile(repository: ApplicationsRepository) {
+export async function exportCsvFile({ applications }: Repositories) {
   await shareFile({
     name: `jobpilot-bewerbungen-${today()}.csv`,
-    content: toCsv(repository.listActive()),
+    content: toCsv(applications.listActive()),
     mimeType: 'text/csv',
   });
 }
 
 /** Datei wählen, prüfen, bestätigen lassen und übernehmen */
-export async function importBackupFile(repository: ApplicationsRepository) {
+export async function importBackupFile({ backup }: Repositories) {
   const text = await pickTextFile(['application/json', 'text/plain']);
   if (text === null) return;
 
@@ -43,7 +43,7 @@ export async function importBackupFile(repository: ApplicationsRepository) {
   });
   if (!confirmed) return;
 
-  repository.importBackup(result.backup);
+  backup.import(result.backup);
   notify(
     'Import abgeschlossen',
     `${count} ${count === 1 ? 'Bewerbung' : 'Bewerbungen'} übernommen.`,

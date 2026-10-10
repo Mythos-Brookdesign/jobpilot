@@ -6,6 +6,6 @@ describe('StatusBadge', () => {
   it('zeigt den deutschen Text zum Status', async () => {
     await render(<StatusBadge status="interview" />);
 
-    expect(screen.getByText('Gespräch')).toBeOnTheScreen();
+    expect(screen.getByText('Fachgespräch')).toBeOnTheScreen();
   });
 });
