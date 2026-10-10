@@ -1,6 +1,9 @@
 import { toLocalIsoDate, type JobApplication } from '@/domain/application';
+import { BACKUP_FORMAT, BACKUP_VERSION, type Backup } from '@/domain/backup';
 
-// Beispieldaten mit Datum relativ zu heute, damit die Demo immer aktuell wirkt
+// Beispieldaten mit Datum relativ zu heute, damit die Demo immer aktuell wirkt.
+// Feste IDs: Mehrfaches Laden ersetzt die Beispiele, statt sie zu verdoppeln.
+
 function daysAgo(days: number) {
   const date = new Date();
   date.setDate(date.getDate() - days);
@@ -10,7 +13,7 @@ function daysAgo(days: number) {
 export function createDemoApplications(): JobApplication[] {
   return [
     {
-      id: 'nordlicht-software',
+      id: 'demo-nordlicht-software',
       company: 'Nordlicht Software',
       role: 'Senior Fullstack Developer',
       location: 'Berlin · Hybrid',
@@ -19,7 +22,7 @@ export function createDemoApplications(): JobApplication[] {
       nextStep: 'Fachgespräch mit dem Tech Lead',
     },
     {
-      id: 'form-funktion',
+      id: 'demo-form-funktion',
       company: 'Form & Funktion',
       role: 'Senior React Developer',
       location: 'Hamburg',
@@ -27,7 +30,7 @@ export function createDemoApplications(): JobApplication[] {
       status: 'sent',
     },
     {
-      id: 'studio-morgen',
+      id: 'demo-studio-morgen',
       company: 'Studio Morgen',
       role: 'Lead Frontend Engineer',
       location: 'Remote',
@@ -35,7 +38,7 @@ export function createDemoApplications(): JobApplication[] {
       status: 'sent',
     },
     {
-      id: 'lumen-works',
+      id: 'demo-lumen-works',
       company: 'Lumen Works',
       role: 'Senior Node.js Engineer',
       location: 'München',
@@ -43,7 +46,7 @@ export function createDemoApplications(): JobApplication[] {
       status: 'offer',
     },
     {
-      id: 'pixelgarten',
+      id: 'demo-pixelgarten',
       company: 'Pixelgarten',
       role: 'Fullstack Developer (PHP)',
       location: 'Köln',
@@ -51,4 +54,28 @@ export function createDemoApplications(): JobApplication[] {
       status: 'rejected',
     },
   ];
+}
+
+/** Beispieldaten im Backup-Format, damit sie über denselben Weg wie ein Import landen */
+export function createDemoBackup(now = new Date()): Backup {
+  const timestamp = now.toISOString();
+  return {
+    format: BACKUP_FORMAT,
+    version: BACKUP_VERSION,
+    exportedAt: timestamp,
+    applications: createDemoApplications().map((application) => {
+      const appliedAt = new Date(`${application.appliedAt}T09:00:00`).toISOString();
+      return {
+        ...application,
+        createdAt: appliedAt,
+        updatedAt: timestamp,
+        statusEvents: [
+          { from: null, to: 'sent', at: appliedAt },
+          ...(application.status === 'sent'
+            ? []
+            : [{ from: 'sent' as const, to: application.status, at: timestamp }]),
+        ],
+      };
+    }),
+  };
 }

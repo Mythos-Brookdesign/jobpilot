@@ -2,7 +2,7 @@
 
 Ziel: Aus dem Klick-Prototyp wird eine App, die zeigt, wie ein Senior-Entwickler arbeitet. Dazu gehören Daten, die erhalten bleiben, durchdachte Architektur, echte native Funktionen, ein KI-Feature mit Nutzen, Tests und CI sowie eine Demo, die Recruiter ohne Installation ausprobieren können.
 
-Stand heute: Phase 0 ist abgeschlossen. Übersicht und Bewerbungsliste mit Suche und Filter, Anlegen, Status ändern. Die Daten liegen noch nur im Speicher (`useState`) und sind nach einem Neustart weg, das ändert Phase 1.
+Stand heute: Phase 0 und 1 sind abgeschlossen. Bewerbungen werden in SQLite gespeichert (iOS, Android und Browser), mit Statusverlauf, Löschen mit Rückgängig sowie Export und Import.
 
 ---
 
@@ -37,35 +37,32 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 
 ---
 
-## Phase 1 – Datenmodell und Speicherung
+## Phase 1 – Datenmodell und Speicherung ✅
 
-**Technik:** `expo-sqlite` mit **Drizzle ORM** und `drizzle-kit` für typisierte Abfragen und versionierte Migrationen. Kleine Einstellungen (Erinnerungsabstände, Onboarding gesehen usw.) kommen in `expo-sqlite/kv-store`.
+**Technik:** `expo-sqlite` mit **Drizzle ORM** (stabile 0.45) und `drizzle-kit` für typisierte Abfragen und versionierte Migrationen.
 
-### Schema (erster Entwurf)
+### Umgesetzt
 
-| Tabelle         | Wichtige Felder                                                                                                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `applications`  | id, company, role, location, workMode (remote / hybrid / onsite), status, priority, source (LinkedIn, StepStone, Empfehlung …), jobUrl, salaryMin/Max, jobDescription, appliedAt, createdAt, updatedAt, archivedAt |
-| `status_events` | id, applicationId, from, to, at. Wird bei jeder Statusänderung automatisch geschrieben und ergibt die Timeline und die Statistiken.                                                                                |
-| `contacts`      | id, applicationId, name, role (Recruiter, Hiring Manager …), email, phone, linkedinUrl                                                                                                                             |
-| `notes`         | id, applicationId, body, createdAt                                                                                                                                                                                 |
-| `appointments`  | id, applicationId, type (Telefon, Video, vor Ort, Techn. Interview), startsAt, location/link, notes                                                                                                                |
-| `reminders`     | id, applicationId, kind, dueAt, notificationId, doneAt                                                                                                                                                             |
+- [x] Tabellen `applications` und `status_events` mit Indizes und Fremdschlüssel (Migration `drizzle/0000_init.sql`)
+- [x] Jede Statusänderung wird protokolliert, auch das Anlegen. Das ist die Grundlage für Timeline und Auswertungen.
+- [x] Repository-Schicht (`src/db/applications-repository.ts`) kapselt alle Datenbankzugriffe. Screens kennen kein SQL.
+- [x] Dasselbe Repository läuft in der App (expo-sqlite) und in den Tests (better-sqlite3 im Arbeitsspeicher, mit denselben Migrationen)
+- [x] Datenbank wird beim Start asynchron geöffnet und migriert (`DatabaseProvider`), der Splash bleibt so lange stehen
+- [x] Live-Aktualisierung mit eigenem Hook `useLiveRows`: bündelt Änderungsmeldungen und liest einmal neu, statt pro geänderter Zeile
+- [x] Löschen mit „Rückgängig“ (Soft Delete über `archivedAt`)
+- [x] Backup als JSON exportieren und importieren (mit zod geprüft, verständliche Fehlermeldungen), CSV-Export für Excel
+- [x] Leerer Zustand beim ersten Start mit „Beispieldaten laden“, neuer Tab „Einstellungen“
+- [x] **Web:** SQLite läuft auch im Browser (WebAssembly, Daten in OPFS). Dafür nötig waren:
+  - Metro-Konfiguration für `.wasm` und die Header COOP/COEP (Dev-Server und `app.json` für EAS Hosting)
+  - asynchrones Öffnen, weil ein synchrones Öffnen beim Laden des Moduls den Worker blockiert
+  - ein Patch für einen Fehler in expo-sqlite 57.0.4 (`patches/`): synchrone Ergebnisse über 255 Bytes wurden abgeschnitten
 
-### Architektur
+### Bewusst verschoben
 
-- Repository-Schicht (`db/repositories/*`) kapselt alle Datenbankzugriffe. Screens kennen kein SQL.
-- Reaktive Abfragen mit Drizzles `useLiveQuery`, damit die Oberfläche nach Änderungen automatisch neu lädt
-- Migrationen mit `drizzle-kit` erzeugen und beim Start im `SQLiteProvider` (`onInit`) ausführen
-- Statusübergänge als reine Funktion in `domain/` (z. B. bei „Angebot“ wird eine offene Nachfass-Erinnerung erledigt). Diese Funktion ist voll getestet.
-- **Web:** expo-sqlite läuft im Web nur als Alpha. Es braucht wasm in Metro und die Header COOP/COEP. Zuerst ausprobieren. Ist es nicht stabil genug, eine Repository-Implementierung für Web (`*.web.ts`) mit In-Memory-Speicher und Demo-Daten bauen. Die Repository-Schicht ist genau dafür da.
-
-### Weitere Funktionen in dieser Phase
-
-- [ ] Export und Import als JSON (Backup) sowie CSV-Export, geteilt über `expo-sharing`
-- [ ] Löschen mit „Rückgängig“ (Soft Delete über `archivedAt`)
-
-**Fertig, wenn:** Die Daten überstehen einen Neustart, die Migrationen sind versioniert, und Repositories und Domain-Logik haben Unit-Tests.
+- Tabellen `contacts`, `notes`, `appointments`, `reminders` kommen mit den Phasen, die sie brauchen (2 und 3), jeweils als eigene Migration
+- Zusätzliche Felder für `applications` (Arbeitsmodell, Quelle, Gehalt, Link …) kommen mit dem Bearbeiten-Formular in Phase 2
+- `expo-sqlite/kv-store` für Einstellungen kommt mit der Einstellungsseite für Erinnerungen in Phase 3
+- Der expo-sqlite-Fehler sollte als Issue bzw. Pull Request an Expo gemeldet werden. Danach kann der Patch entfallen.
 
 ---
 

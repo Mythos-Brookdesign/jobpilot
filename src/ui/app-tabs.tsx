@@ -23,6 +23,14 @@ export default function AppTabs() {
           md="work"
         />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="einstellungen">
+        <NativeTabs.Trigger.Label>Einstellungen</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'gearshape', selected: 'gearshape.fill' }}
+          md="settings"
+        />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

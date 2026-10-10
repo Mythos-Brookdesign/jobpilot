@@ -1,18 +1,20 @@
 import { Link, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { countByStatus, findNextInterview } from '@/domain/application';
 import { useApplications } from '@/features/applications/applications-context';
 import { ApplicationRow } from '@/features/applications/components/application-row';
+import { createDemoBackup } from '@/features/applications/demo-data';
 import { SerifFont, type ThemeColors } from '@/theme/colors';
 import { useTheme } from '@/theme/use-theme';
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { applications } = useApplications();
+  const { applications, repository } = useApplications();
+  const isEmpty = applications.length === 0;
   const counts = countByStatus(applications);
   const nextInterview = findNextInterview(applications);
   const greetingDate = new Intl.DateTimeFormat('de-DE', {
@@ -74,41 +76,64 @@ export default function HomeScreen() {
               />
             </View>
             <Text style={[styles.focusEyebrow, { color: theme.accentSoftEyebrow }]}>
-              {nextInterview ? 'IM PROZESS' : 'GUTER MOMENT'}
+              {isEmpty ? 'LOS GEHT’S' : nextInterview ? 'IM PROZESS' : 'GUTER MOMENT'}
             </Text>
           </View>
           <Text style={[styles.focusTitle, { color: theme.accentSoftText }]}>
-            {nextInterview ? nextInterview.company : 'Dein nächster Schritt wartet.'}
+            {isEmpty
+              ? 'Deine Pipeline ist noch leer.'
+              : nextInterview
+                ? nextInterview.company
+                : 'Dein nächster Schritt wartet.'}
           </Text>
           <Text style={[styles.focusText, { color: theme.accentSoftMuted }]}>
-            {nextInterview?.nextStep ?? 'Halte deine Bewerbungen an einem Ort im Blick.'}
+            {isEmpty
+              ? 'Leg deine erste Bewerbung an oder schau dir die App mit Beispieldaten an.'
+              : (nextInterview?.nextStep ?? 'Halte deine Bewerbungen an einem Ort im Blick.')}
           </Text>
-          <Link href="/bewerbungen" style={[styles.focusLink, { color: theme.accentText }]}>
-            Pipeline ansehen <Text style={styles.focusArrow}>↗</Text>
-          </Link>
-        </View>
-
-        <View style={[styles.sectionHeading, styles.recentHeading]}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Zuletzt aktiv</Text>
-            <Text style={[styles.sectionCaption, { color: theme.textSecondary }]}>
-              Deine Bewerbungen auf einen Blick
-            </Text>
+          <View style={styles.focusActions}>
+            <Link href="/bewerbungen" style={[styles.focusLink, { color: theme.accentText }]}>
+              {isEmpty ? 'Erste Bewerbung anlegen' : 'Pipeline ansehen'}{' '}
+              <Text style={styles.focusArrow}>↗</Text>
+            </Link>
+            {isEmpty ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => repository.importBackup(createDemoBackup())}
+                hitSlop={8}>
+                <Text style={[styles.focusLink, { color: theme.accentSoftMuted }]}>
+                  Beispieldaten laden
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
-          <Link href="/bewerbungen" style={[styles.seeAll, { color: theme.accentText }]}>
-            Alle ansehen
-          </Link>
         </View>
 
-        <View>
-          {applications.slice(0, 3).map((application) => (
-            <ApplicationRow
-              application={application}
-              key={application.id}
-              onPress={() => router.push('/bewerbungen')}
-            />
-          ))}
-        </View>
+        {isEmpty ? null : (
+          <>
+            <View style={[styles.sectionHeading, styles.recentHeading]}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Zuletzt aktiv</Text>
+                <Text style={[styles.sectionCaption, { color: theme.textSecondary }]}>
+                  Deine Bewerbungen auf einen Blick
+                </Text>
+              </View>
+              <Link href="/bewerbungen" style={[styles.seeAll, { color: theme.accentText }]}>
+                Alle ansehen
+              </Link>
+            </View>
+
+            <View>
+              {applications.slice(0, 3).map((application) => (
+                <ApplicationRow
+                  application={application}
+                  key={application.id}
+                  onPress={() => router.push('/bewerbungen')}
+                />
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -250,11 +275,18 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginTop: 3,
   },
+  focusActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: 22,
+    rowGap: 4,
+    marginTop: 15,
+  },
   focusLink: {
     fontSize: 13,
     lineHeight: 20,
     fontWeight: '700',
-    marginTop: 15,
   },
   focusArrow: {
     fontSize: 15,

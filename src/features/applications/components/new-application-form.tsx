@@ -8,7 +8,7 @@ import { FormField } from '@/ui/form-field';
 
 export function NewApplicationForm({ onSaved }: { onSaved: () => void }) {
   const theme = useTheme();
-  const { addApplication } = useApplications();
+  const { repository } = useApplications();
   const [company, setCompany] = useState('');
   const [role, setRole] = useState('');
   const [location, setLocation] = useState('');
@@ -19,7 +19,7 @@ export function NewApplicationForm({ onSaved }: { onSaved: () => void }) {
       setError('Bitte Unternehmen und Position ausfüllen.');
       return;
     }
-    addApplication({
+    repository.create({
       company: company.trim(),
       role: role.trim(),
       location: location.trim() || 'Ort nicht angegeben',
