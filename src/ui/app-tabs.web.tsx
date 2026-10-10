@@ -6,11 +6,13 @@ import {
   type TabListProps,
   type TabTriggerSlotProps,
 } from 'expo-router/ui';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { useTheme } from '@/theme/use-theme';
 
-// Im Browser: Navigationsleiste oben statt nativer Tab-Bar
+// Im Browser: Navigationsleiste oben statt nativer Tab-Bar.
+// Schmale Fenster: ohne Wortmarke, die Tabs teilen sich die Breite.
+const NARROW = 640;
 export default function AppTabs() {
   const theme = useTheme();
 
@@ -25,6 +27,9 @@ export default function AppTabs() {
           <TabTrigger name="bewerbungen" href="/bewerbungen" asChild>
             <TabButton>Bewerbungen</TabButton>
           </TabTrigger>
+          <TabTrigger name="auswertung" href="/auswertung" asChild>
+            <TabButton>Auswertung</TabButton>
+          </TabTrigger>
           <TabTrigger name="einstellungen" href="/einstellungen" asChild>
             <TabButton>Einstellungen</TabButton>
           </TabTrigger>
@@ -37,13 +42,16 @@ export default function AppTabs() {
 
 function TabBar({ children, style, ...props }: TabListProps) {
   const theme = useTheme();
+  const narrow = useWindowDimensions().width < NARROW;
 
   return (
     <View {...props} style={[styles.bar, { borderBottomColor: theme.border }, style]}>
-      <View style={styles.inner}>
-        <Text style={[styles.brand, { color: theme.text }]}>
-          jobpilot<Text style={{ color: theme.accentText }}>.</Text>
-        </Text>
+      <View style={[styles.inner, narrow && styles.innerNarrow]}>
+        {narrow ? null : (
+          <Text style={[styles.brand, { color: theme.text }]}>
+            jobpilot<Text style={{ color: theme.accentText }}>.</Text>
+          </Text>
+        )}
         {children}
       </View>
     </View>
@@ -52,6 +60,7 @@ function TabBar({ children, style, ...props }: TabListProps) {
 
 function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   const theme = useTheme();
+  const narrow = useWindowDimensions().width < NARROW;
 
   return (
     <Pressable
@@ -60,10 +69,17 @@ function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
       accessibilityState={{ selected: isFocused }}
       style={({ pressed }) => [
         styles.tab,
+        narrow && styles.tabNarrow,
         isFocused && { backgroundColor: theme.backgroundSelected },
         pressed && styles.pressed,
       ]}>
-      <Text style={[styles.tabText, { color: isFocused ? theme.text : theme.textSecondary }]}>
+      <Text
+        numberOfLines={1}
+        style={[
+          styles.tabText,
+          narrow && styles.tabTextNarrow,
+          { color: isFocused ? theme.text : theme.textSecondary },
+        ]}>
         {children}
       </Text>
     </Pressable>
@@ -87,6 +103,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
   },
+  innerNarrow: {
+    gap: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
   brand: {
     fontSize: 18,
     fontWeight: '700',
@@ -97,9 +118,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
+  tabNarrow: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  tabTextNarrow: {
+    fontSize: 13,
   },
   pressed: {
     opacity: 0.7,

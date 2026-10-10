@@ -1,9 +1,10 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { APPLICATION_STATUSES } from '@/domain/application';
+import { APPLICATION_STATUSES, PRIORITIES, WORK_MODES } from '@/domain/application';
+import { APPOINTMENT_KINDS } from '@/domain/details';
 
 // Zeitpunkte als ISO-8601-Text, Kalendertage als YYYY-MM-DD.
-// Nach Änderungen: `npm run db:generate` erzeugt die nächste Migration in ./drizzle
+// Nach Änderungen: `npm run db:generate -- --name …` erzeugt die nächste Migration in ./drizzle
 
 export const applications = sqliteTable(
   'applications',
@@ -12,8 +13,14 @@ export const applications = sqliteTable(
     company: text('company').notNull(),
     role: text('role').notNull(),
     location: text('location').notNull(),
+    workMode: text('work_mode', { enum: WORK_MODES }),
     appliedAt: text('applied_at').notNull(),
     status: text('status', { enum: APPLICATION_STATUSES }).notNull(),
+    priority: text('priority', { enum: PRIORITIES }).notNull().default('normal'),
+    source: text('source'),
+    jobUrl: text('job_url'),
+    salaryMin: integer('salary_min'),
+    salaryMax: integer('salary_max'),
     nextStep: text('next_step'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
@@ -39,5 +46,63 @@ export const statusEvents = sqliteTable(
   (table) => [index('status_events_application_id_idx').on(table.applicationId)],
 );
 
+export const contacts = sqliteTable(
+  'contacts',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    role: text('role'),
+    email: text('email'),
+    phone: text('phone'),
+    linkedinUrl: text('linkedin_url'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('contacts_application_id_idx').on(table.applicationId)],
+);
+
+export const notes = sqliteTable(
+  'notes',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('notes_application_id_idx').on(table.applicationId)],
+);
+
+export const appointments = sqliteTable(
+  'appointments',
+  {
+    id: text('id').primaryKey(),
+    applicationId: text('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: APPOINTMENT_KINDS }).notNull(),
+    startsAt: text('starts_at').notNull(),
+    location: text('location'),
+    notes: text('notes'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    index('appointments_application_id_idx').on(table.applicationId),
+    index('appointments_starts_at_idx').on(table.startsAt),
+  ],
+);
+
+/** Kleine App-Einstellungen wie zuletzt gewählter Filter oder Sortierung */
+export const settings = sqliteTable('settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
+
 export type ApplicationRow = typeof applications.$inferSelect;
 export type StatusEventRow = typeof statusEvents.$inferSelect;
+export type ContactRow = typeof contacts.$inferSelect;
+export type NoteRow = typeof notes.$inferSelect;
+export type AppointmentRow = typeof appointments.$inferSelect;

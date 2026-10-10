@@ -1,9 +1,8 @@
-import type { PropsWithChildren } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useApplications } from '@/features/applications/applications-context';
+import { useLive, useRepositories } from '@/db/hooks';
 import { createDemoBackup } from '@/features/applications/demo-data';
 import {
   exportBackupFile,
@@ -13,11 +12,15 @@ import {
 import { SerifFont } from '@/theme/colors';
 import { useTheme } from '@/theme/use-theme';
 import { notify } from '@/ui/dialogs';
+import { Section } from '@/ui/section';
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { applications, repository } = useApplications();
-  const hasData = applications.length > 0;
+  const repositories = useRepositories();
+  const hasData = useLive(
+    ({ applications }) => applications.listActive().length > 0,
+    ['applications'],
+  );
 
   // Fehler beim Teilen oder Lesen von Dateien verständlich melden statt still zu scheitern
   function run(action: () => Promise<void>) {
@@ -36,16 +39,16 @@ export default function SettingsScreen() {
           <ActionRow
             icon={{ ios: 'square.and.arrow.up', android: 'ios_share', web: 'download' }}
             label="Backup exportieren"
-            caption="Alle Bewerbungen samt Verlauf als JSON-Datei"
+            caption="Bewerbungen mit Verlauf, Kontakten, Notizen und Terminen als JSON"
             disabled={!hasData}
-            onPress={() => run(() => exportBackupFile(repository))}
+            onPress={() => run(() => exportBackupFile(repositories))}
           />
           <ActionRow
             icon={{ ios: 'tablecells', android: 'table_chart', web: 'table_chart' }}
             label="Als Tabelle exportieren"
             caption="CSV-Datei für Excel oder Numbers"
             disabled={!hasData}
-            onPress={() => run(() => exportCsvFile(repository))}
+            onPress={() => run(() => exportCsvFile(repositories))}
           />
         </Section>
 
@@ -54,13 +57,13 @@ export default function SettingsScreen() {
             icon={{ ios: 'square.and.arrow.down', android: 'upload_file', web: 'upload_file' }}
             label="Backup importieren"
             caption="Eine zuvor exportierte JSON-Datei einlesen"
-            onPress={() => run(() => importBackupFile(repository))}
+            onPress={() => run(() => importBackupFile(repositories))}
           />
           <ActionRow
             icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }}
             label="Beispieldaten laden"
-            caption="Fünf Beispiel-Bewerbungen zum Ausprobieren"
-            onPress={() => repository.importBackup(createDemoBackup())}
+            caption="Sieben Beispiel-Bewerbungen mit Terminen und Kontakten"
+            onPress={() => repositories.backup.import(createDemoBackup())}
           />
         </Section>
 
@@ -70,22 +73,6 @@ export default function SettingsScreen() {
         </Text>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function Section({ title, children }: PropsWithChildren<{ title: string }>) {
-  const theme = useTheme();
-  return (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{title}</Text>
-      <View
-        style={[
-          styles.sectionBody,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected },
-        ]}>
-        {children}
-      </View>
-    </View>
   );
 }
 
@@ -150,21 +137,6 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     fontWeight: '400',
     marginTop: 5,
-  },
-  section: {
-    marginTop: 28,
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    lineHeight: 17,
-    fontWeight: '600',
-    paddingHorizontal: 4,
-  },
-  sectionBody: {
-    borderWidth: 1,
-    borderRadius: 14,
-    overflow: 'hidden',
   },
   row: {
     minHeight: 64,
