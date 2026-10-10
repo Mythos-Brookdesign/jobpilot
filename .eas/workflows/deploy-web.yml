@@ -1,0 +1,16 @@
+# Veröffentlicht die Web-Demo bei jedem Push auf main (EAS Workflows).
+# Voraussetzung: GitHub-Repo im Expo-Dashboard verbunden, Umgebungsvariablen in „production“:
+#   ANTHROPIC_API_KEY (Secret), JOBPILOT_DEMO=1, EXPO_PUBLIC_DEMO=1
+name: Web-Demo veröffentlichen
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  deploy:
+    type: deploy
+    name: Web-Demo
+    environment: production
+    params:
+      prod: true

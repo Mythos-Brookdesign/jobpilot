@@ -18,6 +18,12 @@ export function createBackupRepository(db: Database) {
   }
 
   return {
+    /** Löscht alle Bewerbungen samt Verlauf, Kontakten, Notizen, Terminen und Erinnerungen */
+    clearAll() {
+      // Fremdschlüssel mit ON DELETE CASCADE räumen die abhängigen Tabellen mit ab
+      db.delete(applications).run();
+    },
+
     /** Alle nicht gelöschten Bewerbungen mit Verlauf, Kontakten, Notizen und Terminen */
     export(now = new Date()): Backup {
       const ids = applicationsRepository.listActive().map((application) => application.id);

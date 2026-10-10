@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import { Section } from '@/ui/section';
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const repositories = useRepositories();
   const hasData = useLive(
     ({ applications }) => applications.listActive().length > 0,
@@ -59,6 +61,15 @@ export default function SettingsScreen() {
             caption="CSV-Datei für Excel oder Numbers"
             disabled={!hasData}
             onPress={() => run(() => exportCsvFile(repositories))}
+          />
+        </Section>
+
+        <Section title="Über">
+          <ActionRow
+            icon={{ ios: 'info.circle', android: 'info', web: 'info' }}
+            label="Über jobpilot"
+            caption="Was die App kann und wie sie gebaut ist"
+            onPress={() => router.push('/ueber')}
           />
         </Section>
 

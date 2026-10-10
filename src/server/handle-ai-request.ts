@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import { requestSchemas, type AiAction } from '@/domain/ai';
+import { isDemoRequest } from '@/domain/demo';
 import {
   AiIncompleteError,
   AiRefusalError,
@@ -9,12 +10,18 @@ import {
 } from '@/server/ai-service';
 import { createRateLimiter } from '@/server/rate-limit';
 
-const limiter = createRateLimiter({ limit: 30, windowMs: 60 * 60 * 1000 });
+const HOUR = 60 * 60 * 1000;
+/** Öffentliche Web-Demo: nur Demo-Inhalte, engeres Limit, Antworten aus dem Zwischenspeicher */
+const DEMO = process.env.JOBPILOT_DEMO === '1';
+const limiter = createRateLimiter({ limit: DEMO ? 10 : 30, windowMs: HOUR });
+const demoCache = new Map<string, unknown>();
 
 type Dependencies = {
   /** null, wenn auf dem Server kein API-Key eingerichtet ist */
   service: AiService | null;
   allow: (key: string) => boolean;
+  /** Demo-Modus: Zwischenspeicher für gleiche Anfragen; undefined = kein Demo-Modus */
+  demoCache?: Map<string, unknown>;
 };
 
 // Client erst bei Bedarf anlegen – ohne Key soll der Server trotzdem starten
@@ -23,7 +30,7 @@ function defaultDependencies(): Dependencies {
   if (defaultService === undefined) {
     defaultService = process.env.ANTHROPIC_API_KEY ? createAiService(new Anthropic()) : null;
   }
-  return { service: defaultService, allow: limiter.allow };
+  return { service: defaultService, allow: limiter.allow, demoCache: DEMO ? demoCache : undefined };
 }
 
 const errorResponse = (status: number, error: string) => Response.json({ error }, { status });
@@ -38,20 +45,34 @@ export async function handleAiRequest(
     return errorResponse(503, 'Der KI-Assistent ist auf diesem Server nicht eingerichtet.');
   }
 
-  const client = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unbekannt';
-  if (!deps.allow(client)) {
-    return errorResponse(429, 'Zu viele Anfragen in kurzer Zeit. Bitte versuche es später erneut.');
-  }
-
   const body = await request.json().catch(() => null);
   const parsed = requestSchemas[action].safeParse(body);
   if (!parsed.success) {
     return errorResponse(400, parsed.error.issues[0]?.message ?? 'Ungültige Anfrage.');
   }
 
+  const cacheKey = `${action}:${JSON.stringify(parsed.data)}`;
+  if (deps.demoCache) {
+    if (!isDemoRequest(action, parsed.data as never)) {
+      return errorResponse(
+        403,
+        'In der Demo funktioniert der Assistent nur mit der Beispiel-Anzeige. In der App kannst du eigene Texte verwenden.',
+      );
+    }
+    // Gleiche Demo-Anfrage schon beantwortet: kostenlos und sofort
+    if (deps.demoCache.has(cacheKey)) return Response.json(deps.demoCache.get(cacheKey));
+  }
+
+  // Nur echte Aufrufe zählen gegen das Limit
+  const client = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unbekannt';
+  if (!deps.allow(client)) {
+    return errorResponse(429, 'Zu viele Anfragen in kurzer Zeit. Bitte versuche es später erneut.');
+  }
+
   try {
     // Der Typ hängt an `action`; die Prüfung oben garantiert die passende Form
     const result = await deps.service.run(action, parsed.data as never);
+    deps.demoCache?.set(cacheKey, result);
     return Response.json(result);
   } catch (error) {
     if (error instanceof AiRefusalError) {

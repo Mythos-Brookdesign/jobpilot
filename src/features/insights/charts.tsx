@@ -48,21 +48,21 @@ export function FunnelChart({ stages }: { stages: ReturnType<typeof funnel> }) {
           <Text numberOfLines={1} style={[styles.funnelLabel, { color: theme.textSecondary }]}>
             {STATUS_LABELS[stage.stage]}
           </Text>
+          {/* Balken in eigener Fläche, Werte in fester Spalte – nichts kann überlaufen */}
           <View style={[styles.funnelTrack, { borderLeftColor: theme.chartGrid }]}>
             {stage.count > 0 ? (
               <View
                 style={[
                   styles.funnelBar,
-                  // Längster Balken nimmt 78 % ein, rechts bleibt Platz für den Wert
-                  { width: `${(stage.count / max) * 78}%`, backgroundColor: theme.chartBar },
+                  { width: `${(stage.count / max) * 100}%`, backgroundColor: theme.chartBar },
                 ]}
               />
             ) : null}
-            <Text style={[styles.funnelValue, { color: theme.text }]}>
-              {stage.count}
-              <Text style={{ color: theme.textSecondary }}> · {percent(stage.share)}</Text>
-            </Text>
           </View>
+          <Text style={[styles.funnelValue, { color: theme.text }]}>
+            {stage.count}
+            <Text style={{ color: theme.textSecondary }}> · {percent(stage.share)}</Text>
+          </Text>
         </View>
       ))}
     </View>
@@ -227,9 +227,7 @@ const styles = StyleSheet.create({
   funnelTrack: {
     flex: 1,
     minHeight: BAR_THICKNESS + 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
     borderLeftWidth: 1,
   },
   funnelBar: {
@@ -238,8 +236,11 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   funnelValue: {
+    width: 76,
+    textAlign: 'right',
     fontSize: 13,
     fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
   readout: {
     fontSize: 12,

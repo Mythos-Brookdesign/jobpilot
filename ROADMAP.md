@@ -178,19 +178,16 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 
 Recruiter installieren keine App. Sie klicken einen Link an und schauen 60 Sekunden.
 
-- [ ] **Web-Demo auf EAS Hosting** (eigene Domain, z. B. `jobpilot.marco.dev`), responsiv mit Kanban-Ansicht auf dem Desktop
-- [ ] **Demo-Modus:** realistische Beispieldaten (Entwickler-Stellen statt Designer-Stellen), Banner „Demo: Deine Daten bleiben lokal im Browser“, Button „Demo zurücksetzen“
-- [ ] Die KI-Übernahme in der Demo mit einer Beispiel-Stellenanzeige zum Ausprobieren, eng begrenzt durch das Rate-Limit
-- [ ] Seite **„Über dieses Projekt“** in der App: Problem, Architektur, Stack, Links zu GitHub und zum Portfolio
-- [ ] **README** als Schaufenster:
-  - Ein Satz zum Problem, GIF und Screenshots (iOS, Android, Web)
-  - Link zur Live-Demo und QR-Code für Expo Go bzw. EAS Update
-  - Architekturdiagramm (Datenfluss App → Repository → SQLite, App → API Route → Claude)
-  - Wichtige Entscheidungen kurz begründet (warum SQLite und Drizzle, warum lokale Benachrichtigungen, warum API Routes)
-  - So startest du das Projekt, so laufen die Tests
-- [ ] Entscheidungen zusätzlich als kurze ADRs in `docs/adr/`
-- [ ] **Im Portfolio** den Platzhalter „[Projektname App]“ in `portfolio/src/data/profile.ts` durch jobpilot ersetzen, mit Screenshot, Live-Link und GitHub-Link
-- [ ] Optional: TestFlight-Beta oder interne Android-Testversion über EAS Submit
+- [x] **Demo-Modus** (`EXPO_PUBLIC_DEMO=1`): Beispieldaten beim ersten Besuch, Hinweisband „Demo · alles bleibt in deinem Browser“, „Zurücksetzen“, Link „Über das Projekt“
+- [x] **KI in der Demo nur mit Beispielinhalten** (`JOBPILOT_DEMO=1`): Der Server lehnt eigene Texte ab, bevor Claude aufgerufen wird, und beantwortet gleiche Anfragen aus dem Zwischenspeicher – echte Antworten, Kosten nahe null
+- [x] Seite **„Über jobpilot“**: Problem, Funktionen, Architektur-Entscheidungen, Link zum Code
+- [x] **README** als Schaufenster: GIF-Rundgang, Screenshots, Architekturdiagramm, Entscheidungen, Qualität, Anleitung
+- [x] Entscheidungen als **ADRs** in `docs/adr/`
+- [x] Deployment vorbereitet: `npm run deploy:web`, EAS Workflow `.eas/workflows/deploy-web.yml`
+- [ ] **Web-Demo auf EAS Hosting** veröffentlichen (`jobpilot.expo.app`) – braucht einmalig `eas login`
+- [ ] `origin` im expo-router-Plugin auf die Hosting-Adresse setzen, damit der Assistent auch in der installierten App funktioniert
+- [ ] **Im Portfolio** den Platzhalter „[Projektname App]“ durch jobpilot ersetzen, mit Screenshot, Live-Link und GitHub-Link
+- [ ] Optional: iOS-Screenshots ohne Expo-Go-Werkzeugknopf, TestFlight-Beta bzw. interne Android-Testversion über EAS
 
 **Fertig, wenn:** Ein Recruiter kann vom Portfolio aus mit einem Klick die laufende App im Browser ausprobieren.
 

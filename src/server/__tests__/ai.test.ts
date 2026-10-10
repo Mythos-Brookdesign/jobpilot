@@ -10,6 +10,7 @@ import {
   createAiService,
   type AiService,
 } from '@/server/ai-service';
+import { DEMO_POSTING } from '@/domain/demo';
 import { handleAiRequest } from '@/server/handle-ai-request';
 import { createRateLimiter } from '@/server/rate-limit';
 
@@ -157,6 +158,43 @@ describe('handleAiRequest', () => {
       allow: allowAll,
     });
     expect(response.status).toBe(422);
+  });
+});
+
+describe('handleAiRequest im Demo-Modus', () => {
+  const demoPost = (body: unknown) =>
+    new Request('http://localhost/api/ki/stellenanzeige', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  it('lehnt eigene Texte ab, ohne das Modell aufzurufen', async () => {
+    const run = jest.fn();
+    const response = await handleAiRequest('stellenanzeige', demoPost({ posting: POSTING }), {
+      service: { run },
+      allow: () => true,
+      demoCache: new Map(),
+    });
+    expect(response.status).toBe(403);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('beantwortet gleiche Demo-Anfragen aus dem Zwischenspeicher', async () => {
+    const run = jest.fn(async () => extraction as never);
+    const allow = jest.fn(() => true);
+    const deps = { service: { run }, allow, demoCache: new Map<string, unknown>() };
+
+    for (let i = 0; i < 3; i++) {
+      const response = await handleAiRequest(
+        'stellenanzeige',
+        demoPost({ posting: DEMO_POSTING }),
+        deps,
+      );
+      expect(await response.json()).toEqual(extraction);
+    }
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(allow).toHaveBeenCalledTimes(1);
   });
 });
 

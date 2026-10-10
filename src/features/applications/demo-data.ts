@@ -1,4 +1,5 @@
 import { toLocalIsoDate, type ApplicationStatus } from '@/domain/application';
+import { DEMO_COMPANY, DEMO_CONTACT, DEMO_POSTING, DEMO_ROLE } from '@/domain/demo';
 import {
   BACKUP_FORMAT,
   BACKUP_VERSION,
@@ -27,8 +28,8 @@ type DemoEntry = Omit<
 const DEMO: DemoEntry[] = [
   {
     id: 'demo-nordlicht-software',
-    company: 'Nordlicht Software',
-    role: 'Senior Fullstack Developer',
+    company: DEMO_COMPANY,
+    role: DEMO_ROLE,
     location: 'Berlin',
     workMode: 'hybrid',
     status: 'interview',
@@ -38,6 +39,8 @@ const DEMO: DemoEntry[] = [
     salaryMin: 75000,
     salaryMax: 85000,
     nextStep: 'Fachgespräch mit dem Tech Lead vorbereiten',
+    // Die Beispiel-Anzeige: damit funktioniert der KI-Assistent auch in der Web-Demo
+    jobDescription: DEMO_POSTING,
     daysAgo: 12,
     history: [
       ['applied', 0],
@@ -47,7 +50,7 @@ const DEMO: DemoEntry[] = [
     contacts: [
       {
         id: 'demo-contact-jana',
-        name: 'Jana Peters',
+        name: DEMO_CONTACT,
         role: 'Recruiterin',
         email: 'jana.peters@example.com',
       },
