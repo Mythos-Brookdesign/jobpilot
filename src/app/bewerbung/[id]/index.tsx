@@ -18,6 +18,7 @@ import { ReminderList } from '@/features/reminders/reminder-list';
 import { SerifFont } from '@/theme/colors';
 import { useTheme } from '@/theme/use-theme';
 import { Button } from '@/ui/button';
+import { ListRow } from '@/ui/list-row';
 import { confirm } from '@/ui/dialogs';
 import { Screen } from '@/ui/screen';
 import { Section } from '@/ui/section';
@@ -131,6 +132,39 @@ export default function ApplicationScreen() {
             Keine offenen Erinnerungen. Nachhaken und Termin-Erinnerungen entstehen automatisch.
           </Text>
         )}
+      </Section>
+      <Section title="KI-Assistent">
+        {(
+          [
+            [
+              'passung',
+              'Passt die Stelle zu mir?',
+              'Abgleich mit deinem Profil',
+              { ios: 'checkmark.seal', android: 'verified', web: 'verified' },
+            ],
+            [
+              'vorbereitung',
+              'Gespräch vorbereiten',
+              'Wahrscheinliche Fragen und gute Rückfragen',
+              { ios: 'questionmark.bubble', android: 'quiz', web: 'quiz' },
+            ],
+            [
+              'entwurf',
+              'Text entwerfen',
+              'Anschreiben, Nachfass- oder Dankes-Mail',
+              { ios: 'square.and.pencil', android: 'edit_note', web: 'edit_note' },
+            ],
+          ] as const
+        ).map(([aufgabe, title, subtitle, icon], index) => (
+          <ListRow
+            key={aufgabe}
+            first={index === 0}
+            icon={icon}
+            title={title}
+            subtitle={subtitle}
+            onPress={() => router.push({ pathname: '/bewerbung/[id]/ki', params: { id, aufgabe } })}
+          />
+        ))}
       </Section>
       <Section title="Eckdaten">
         <Facts application={application} />

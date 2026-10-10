@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLive, useRepositories } from '@/db/hooks';
 import { createDemoBackup } from '@/features/applications/demo-data';
+import { AiSettings } from '@/features/ai/ai-settings';
 import { ReminderSettings } from '@/features/reminders/reminder-settings';
 import {
   exportBackupFile,
@@ -38,6 +39,10 @@ export default function SettingsScreen() {
 
         <Section title="Erinnerungen">
           <ReminderSettings />
+        </Section>
+
+        <Section title="KI-Assistent">
+          <AiSettings />
         </Section>
 
         <Section title="Daten sichern">

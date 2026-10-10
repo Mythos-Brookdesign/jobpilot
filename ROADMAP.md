@@ -2,7 +2,7 @@
 
 Ziel: Aus dem Klick-Prototyp wird eine App, die zeigt, wie ein Senior-Entwickler arbeitet. Dazu gehören Daten, die erhalten bleiben, durchdachte Architektur, echte native Funktionen, ein KI-Feature mit Nutzen, Tests und CI sowie eine Demo, die Recruiter ohne Installation ausprobieren können.
 
-Stand heute: Phase 0 bis 3 sind abgeschlossen. Bewerbungen werden in SQLite gespeichert (iOS, Android und Browser) – mit erweiterter Pipeline, Detailseite, Kontakten, Notizen, Terminen, Auswertung, Board-Ansicht, Erinnerungen mit Benachrichtigungen sowie Export und Import.
+Stand heute: Phase 0 bis 4 sind abgeschlossen. Bewerbungen werden in SQLite gespeichert (iOS, Android und Browser) – mit erweiterter Pipeline, Detailseite, Kontakten, Notizen, Terminen, Auswertung, Board-Ansicht, Erinnerungen mit Benachrichtigungen, KI-Assistent (Claude) sowie Export und Import.
 
 ---
 
@@ -145,30 +145,32 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 
 ---
 
-## Phase 4 – KI-Assistent (das Alleinstellungsmerkmal)
-
-Damit hebt sich jobpilot von üblichen Tutorial-Trackern ab, und es passt zu „Frag meinen Lebenslauf“ im Portfolio.
+## Phase 4 – KI-Assistent ✅
 
 ### Funktionen
 
-1. **Stellenanzeige übernehmen:** Text einfügen (oder URL). Claude extrahiert Firma, Position, Ort, Arbeitsmodell, Gehalt, geforderte Skills und Ansprechpartner als strukturiertes JSON. Daraus wird ein vorausgefülltes Formular, das man vor dem Speichern prüft.
-2. **Passung zum eigenen Profil:** Den Lebenslauf einmal hinterlegen. Die App zeigt passende Skills, Lücken und Punkte, die man im Gespräch betonen sollte.
-3. **Gesprächsvorbereitung:** wahrscheinliche Fragen zur Stelle und zum Tech-Stack, dazu Fragen, die man selbst stellen kann
-4. **Entwürfe:** Anschreiben, Nachfass-Mail, Dankes-Mail, jeweils mit Bezug auf die gespeicherte Bewerbung
+- [x] **Stellenanzeige übernehmen:** Text einfügen → Claude füllt Firma, Position, Ort, Arbeitsmodell, Gehalt und Ansprechperson als Formular vor; Zusammenfassung und geforderte Skills zum Prüfen; gespeichert wird erst nach Bestätigung (als „Gemerkt“, Ansprechperson als Kontakt)
+- [x] **Passung zum Profil:** Profil (z. B. Lebenslauf als Text) einmal in den Einstellungen hinterlegen → Einschätzung, was passt, Lücken, was im Gespräch zu betonen ist
+- [x] **Gesprächsvorbereitung:** 6–8 wahrscheinliche Fragen mit Begründung und Stichpunkten, dazu gute Rückfragen
+- [x] **Entwürfe:** Anschreiben, Nachfass-Mail, Dankes-Mail – mit Ansprechperson, Anzeige, Profil und optionalem Kontext
+- [x] Ergebnisse kopieren oder als Notiz speichern; Anzeigentext als eigenes Feld der Bewerbung (Migration `0003`)
 
 ### Architektur
 
-- **Der API-Key gehört nie in die App.** Die Aufrufe laufen über **Expo Router API Routes** (`src/app/api/*+api.ts`) auf **EAS Hosting**. Dafür muss `web.output` auf `"server"` umgestellt werden.
-- Eingaben mit `zod` prüfen, Ausgaben über Structured Outputs bzw. Tool Use als typisiertes JSON
-- Rate-Limit und Größenbegrenzung der Eingaben, Ausgabenlimit in der Anthropic Console
-- Für die Extraktion reicht ein kleines, schnelles Modell. Die Modellwahl bei der Umsetzung mit den aktuellen Claude-API-Dokumenten treffen.
-- Datenschutz: Vor der ersten Nutzung erklären, was an die API geht. Der Lebenslauf bleibt lokal und wird nur pro Anfrage mitgeschickt.
+- [x] API-Key nur auf dem Server: **Expo Router API Routes** (`src/app/api/ki/*+api.ts`), `web.output: "server"`
+- [x] Gemeinsame zod-Schemas für Anfragen und Antworten (`src/domain/ai.ts`): Der Server prüft die Eingaben, die App prüft die Antworten; Claude liefert über **Structured Outputs** genau dieses Format
+- [x] Modell Claude Opus 5.5; Aufwand `low` für die Extraktion, `medium` für Abgleich, Vorbereitung und Texte; serverseitige Fallbacks bei Ablehnungen (`fallbacks: "default"`)
+- [x] Gestreamte Anfragen – sonst brechen längere Antworten (Vorbereitung > 30 s) in der Server-Laufzeit ab
+- [x] Nutzerinhalte in eigenen Tags und ausdrücklich als Daten markiert (Schutz vor Prompt-Injection über Anzeigentexte)
+- [x] Größenlimits, Rate-Limit je IP, verständliche Fehlermeldungen; ohne API-Key meldet der Server das klar
+- [x] Einwilligung vor der ersten Nutzung, jederzeit in den Einstellungen widerrufbar; Profil bleibt auf dem Gerät
+- [x] Tests mit nachgebautem Anthropic-Client (Modell, Fallback, Datenkennzeichnung, Fehlerfälle) und für den App-Client; einmal echt gegen Claude getestet
 
-### Optional
+### Bewusst verschoben
 
-- [ ] **Teilen in die App:** eine Stellenanzeige aus LinkedIn oder dem Browser per „Teilen“ an jobpilot senden. Das braucht ein Config-Plugin (z. B. `expo-share-intent`) und einen Development Build.
-
-**Fertig, wenn:** Eine eingefügte Stellenanzeige ergibt in weniger als 10 Sekunden eine vorausgefüllte, korrigierbare Bewerbung.
+- **Teilen in die App** (Anzeige aus LinkedIn/Browser per „Teilen“ an jobpilot) – braucht ein Config-Plugin und einen Development Build
+- **Native App gegen den Server in Produktion:** In der Entwicklung gehen die Aufrufe an den Dev-Server; für die veröffentlichte App wird in Phase 5 die Hosting-Adresse als `origin` im expo-router-Plugin gesetzt
+- **Bekannte Einschränkung:** `npm run web` (Dev-Server) scheitert in Expo SDK 57 mit „Worker chunk not found“ für den SQLite-Worker – ein Fehler in Expos Dev-Serializer, nicht im Projekt. Die Web-Version wird mit `npm run web:preview` (Export + `expo serve`) getestet, genau wie sie später ausgeliefert wird.
 
 ---
 

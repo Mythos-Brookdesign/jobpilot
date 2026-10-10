@@ -27,6 +27,8 @@ const backupApplication = z.object({
   salaryMin: z.number().int().nonnegative().optional(),
   salaryMax: z.number().int().nonnegative().optional(),
   nextStep: z.string().optional(),
+  // seit Phase 4; optional, damit ältere Backups gültig bleiben
+  jobDescription: z.string().optional(),
   createdAt: timestamp,
   updatedAt: timestamp,
   statusEvents: z.array(z.object({ from: status.nullable(), to: status, at: timestamp })),
