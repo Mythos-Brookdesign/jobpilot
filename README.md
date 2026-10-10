@@ -11,6 +11,7 @@ Bewerbungen im Blick behalten: eine App für iOS, Android und Web, mit der man d
 - **Übersicht** mit Kennzahlen, nächstem Termin und den Terminen der nächsten 7 Tage
 - **Liste** mit Suche, Filtern, Sortierung (gespeichert) und auf breiten Bildschirmen einer Board-Ansicht
 - **Auswertung:** Funnel, Antwortquote, Zeit bis zur Rückmeldung, Erfolg je Quelle, Aktivität pro Woche
+- **Erinnerungen:** Nachhaken, wenn sich nichts tut, Termine am Vortag und eine Stunde vorher, Dankeschön danach, eigene Erinnerungen – als Benachrichtigung mit „Erledigt“ und „Später“, im Browser in der Übersicht
 - Lokale Speicherung in SQLite, Backup als JSON (Import und Export), CSV-Export für Excel
 - Hell- und Dunkelmodus, native Tabs und Datums-Picker auf iOS und Android, responsive Web-Version
 
@@ -31,7 +32,7 @@ src/
   domain/       reine Logik ohne React: Status, Filter, Sortierung, Formulare, Auswertungen,
                 Timeline, Backup, CSV
   db/           Schema, Repositories, Datenbankanbindung, Live-Abfragen
-  features/     Feature-Module: applications/, insights/, data-transfer/
+  features/     Feature-Module: applications/, insights/, reminders/, data-transfer/
   ui/           wiederverwendbare Bausteine (Sheet, Formularfeld, Suche, Tabs, Dialoge)
   theme/        Farben für Hell und Dunkel, Hooks für das Farbschema
 drizzle/        generierte SQL-Migrationen
@@ -45,6 +46,8 @@ patches/        Korrekturen an Abhängigkeiten (patch-package)
 - **Start:** Die Datenbank wird asynchron geöffnet und migriert, erst danach wird die App angezeigt (`DatabaseProvider`).
 - **Live-Aktualisierung:** `useLiveRows` hört auf Änderungen an Tabellen und liest gebündelt einmal neu, auch wenn ein Import hunderte Zeilen schreibt.
 - **Web:** SQLite läuft als WebAssembly in einem Worker und speichert im Origin Private File System. Dafür braucht der Server die Header `Cross-Origin-Opener-Policy` und `Cross-Origin-Embedder-Policy` (im Dev-Server über `metro.config.js`, für EAS Hosting in `app.json`).
+
+- **Erinnerungen:** Regeln (`domain/reminders.ts`) erzeugen Erinnerungen mit Schlüsseln, die ihre Grundlage enthalten. Ein Abgleich schreibt sie in die Tabelle `reminders`; ein zweiter Abgleich plant die Systembenachrichtigungen mit diesen Schlüsseln als ID. Beides ist idempotent und läuft nach jeder relevanten Änderung.
 
 ### Patch für expo-sqlite
 

@@ -2,7 +2,7 @@
 
 Ziel: Aus dem Klick-Prototyp wird eine App, die zeigt, wie ein Senior-Entwickler arbeitet. Dazu gehören Daten, die erhalten bleiben, durchdachte Architektur, echte native Funktionen, ein KI-Feature mit Nutzen, Tests und CI sowie eine Demo, die Recruiter ohne Installation ausprobieren können.
 
-Stand heute: Phase 0 bis 2 sind abgeschlossen. Bewerbungen werden in SQLite gespeichert (iOS, Android und Browser) – mit erweiterter Pipeline, Detailseite, Kontakten, Notizen, Terminen, Auswertung, Board-Ansicht sowie Export und Import.
+Stand heute: Phase 0 bis 3 sind abgeschlossen. Bewerbungen werden in SQLite gespeichert (iOS, Android und Browser) – mit erweiterter Pipeline, Detailseite, Kontakten, Notizen, Terminen, Auswertung, Board-Ansicht, Erinnerungen mit Benachrichtigungen sowie Export und Import.
 
 ---
 
@@ -111,31 +111,37 @@ Bevor neue Funktionen dazukommen, soll das Repo nicht mehr nach Template aussehe
 
 ---
 
-## Phase 3 – Erinnerungen
+## Phase 3 – Erinnerungen ✅
 
-**Technik:** `expo-notifications` mit lokalen, zeitgesteuerten Benachrichtigungen. Die funktionieren auch in Expo Go, Push vom Server ist nicht nötig.
+**Technik:** `expo-notifications` mit lokalen, zeitgesteuerten Benachrichtigungen (funktionieren auch in Expo Go, kein Server nötig).
 
-### Regeln (in `domain/reminder-rules.ts`, einstellbar)
+### Regeln (`src/domain/reminders.ts`, voll getestet)
 
-| Auslöser                                                        | Erinnerung                                                |
-| --------------------------------------------------------------- | --------------------------------------------------------- |
-| Status „Beworben“ und X Tage ohne Statusänderung (Standard: 10) | „Seit 10 Tagen keine Rückmeldung von {Firma}. Nachhaken?“ |
-| Termin angelegt                                                 | Am Vortag um 18 Uhr und 1 Stunde vorher                   |
-| Nach einem Gespräch                                             | Am nächsten Tag: „Dankes-Mail an {Kontakt} senden?“       |
-| Angebot mit Frist                                               | 2 Tage vor Fristende                                      |
-| Eigene Erinnerung                                               | frei wählbares Datum und Text                             |
+| Auslöser                                                                                                    | Erinnerung                                   |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Laufende Bewerbung, X Tage ohne Statusänderung, kein Termin in Sicht (Standard 10, wählbar: aus, 7, 10, 14) | „Nachhaken bei {Firma}?“ um 9 Uhr            |
+| Termin                                                                                                      | Am Vortag um 18 Uhr und 1 Stunde vorher      |
+| Nach einem Termin                                                                                           | Am nächsten Morgen: „Dankeschön an {Firma}?“ |
+| Eigene Erinnerung                                                                                           | frei wählbarer Zeitpunkt und Text            |
 
-### Umsetzung
+### Umgesetzt
 
-- [ ] Tabelle `reminders` ist die Quelle der Wahrheit. Die gespeicherte `notificationId` dient zum Abbrechen und Neuplanen.
-- [ ] Ändern sich Status oder Termin, werden die Erinnerungen dieser Bewerbung neu berechnet. Das ist eine reine Funktion, die ein Soll und ein Ist vergleicht und deshalb gut testbar ist.
-- [ ] **Aktionen direkt in der Benachrichtigung** über Kategorien (`setNotificationCategoryAsync`): „Erledigt“, „In 3 Tagen erneut“
-- [ ] Antippen öffnet `/bewerbung/[id]` per Deep Link
-- [ ] Berechtigung erst anfragen, wenn sie gebraucht wird (beim ersten Termin oder der ersten Erinnerung), mit kurzer Erklärung vorher
-- [ ] Einstellungsseite: Abstände, Ruhezeiten, Erinnerungen ein oder aus
-- [ ] Web: keine Systembenachrichtigungen, stattdessen die Liste „Heute fällig“ in der App
+- [x] Tabelle `reminders` als Quelle der Wahrheit (Migration `0002`). Der Schlüssel enthält die Grundlage, z. B. Termin-ID und Startzeit. Verschiebt sich ein Termin, entsteht automatisch eine neue Erinnerung, und die alte entfällt.
+- [x] Abgleich als reine Funktion (`diffReminders`): Erledigt und Später bleiben erhalten, eigene Erinnerungen werden nie angefasst. Zweimal ausführen ändert nichts – keine Endlosschleife.
+- [x] Systembenachrichtigungen werden abgeglichen statt neu angelegt: Die ID der Benachrichtigung ist der Erinnerungsschlüssel. Fremde Benachrichtigungen bleiben unberührt (`planSchedule`, getestet).
+- [x] Abgleich beim Start, nach Datenänderungen (gebündelt) und wenn die App wieder in den Vordergrund kommt
+- [x] **Aktionen in der Benachrichtigung:** „Erledigt“ und „In 3 Tagen erneut“; Antippen öffnet die Bewerbung – auch wenn die App vorher geschlossen war
+- [x] Erlaubnis erst nach einer Erklärung in der App (Hinweiskarte, sobald es Erinnerungen gibt, oder in den Einstellungen); bei abgelehnter Erlaubnis Weg in die Systemeinstellungen
+- [x] Einstellungen: Benachrichtigungen ein/aus, Nachhaken-Abstand, Termin- und Dankeschön-Erinnerungen
+- [x] In der App: „Heute fällig“ in der Übersicht, Erinnerungen je Bewerbung auf der Detailseite
+- [x] Browser: keine Systembenachrichtigungen, fällige Erinnerungen erscheinen in der Übersicht
+- [x] Android: eigener Benachrichtigungskanal, Icon und Farbe
 
-**Fertig, wenn:** Erinnerungen werden korrekt geplant, verschoben und gelöscht, und die Regeln haben Unit-Tests.
+### Bewusst verschoben
+
+- Ruhezeiten: Die Regeln nutzen feste, ruhige Uhrzeiten (9 Uhr, 18 Uhr); nur „eine Stunde vorher“ richtet sich nach dem Termin
+- Frist für ein Angebot als eigenes Feld – bis dahin über eine eigene Erinnerung
+- Eigene Erinnerungen sind noch nicht im Backup enthalten (Regel-Erinnerungen entstehen nach einem Import automatisch neu); kommt mit der nächsten Backup-Version
 
 ---
 

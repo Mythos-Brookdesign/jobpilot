@@ -5,8 +5,11 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLive, useRepositories } from '@/db/hooks';
 import { countByFilter, matchesFilter, type StatusFilter } from '@/domain/application';
 import { APPOINTMENT_KIND_LABELS, formatAppointmentTime } from '@/domain/details';
+import { dueToday } from '@/domain/reminders';
 import { ApplicationRow } from '@/features/applications/components/application-row';
 import { createDemoBackup } from '@/features/applications/demo-data';
+import { NotificationPrompt } from '@/features/reminders/notification-prompt';
+import { ReminderList } from '@/features/reminders/reminder-list';
 import { SerifFont } from '@/theme/colors';
 import { useTheme } from '@/theme/use-theme';
 import { ListRow } from '@/ui/list-row';
@@ -25,15 +28,16 @@ export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { backup } = useRepositories();
-  const { applications, upcoming } = useLive(
+  const { applications, upcoming, due } = useLive(
     (repositories) => {
       const now = new Date();
       return {
         applications: repositories.applications.listActive(),
         upcoming: repositories.details.upcomingAppointments(now, new Date(now.getTime() + WEEK_MS)),
+        due: dueToday(repositories.reminders.open(), now),
       };
     },
-    ['applications', 'appointments'],
+    ['applications', 'appointments', 'reminders'],
   );
 
   const isEmpty = applications.length === 0;
@@ -158,6 +162,17 @@ export default function HomeScreen() {
           )}
         </View>
       </View>
+
+      {due.length > 0 ? (
+        <Section title="Heute fällig">
+          <ReminderList
+            reminders={due}
+            showCompany
+            onOpen={(reminder) => open(reminder.applicationId)}
+          />
+        </Section>
+      ) : null}
+      <NotificationPrompt />
 
       {upcoming.length > 1 ? (
         <Section title="Nächste 7 Tage">

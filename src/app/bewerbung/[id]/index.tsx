@@ -14,6 +14,7 @@ import {
 } from '@/features/applications/components/detail/sections';
 import { StatusPicker } from '@/features/applications/components/detail/status-picker';
 import { NotFound } from '@/features/applications/components/not-found';
+import { ReminderList } from '@/features/reminders/reminder-list';
 import { SerifFont } from '@/theme/colors';
 import { useTheme } from '@/theme/use-theme';
 import { Button } from '@/ui/button';
@@ -31,7 +32,7 @@ export default function ApplicationScreen() {
   const [deleting, setDeleting] = useState(false);
 
   const detail = useLive(
-    ({ applications, details }) => {
+    ({ applications, details, reminders }) => {
       const application = applications.get(id);
       if (!application) return undefined;
       return {
@@ -40,14 +41,15 @@ export default function ApplicationScreen() {
         contacts: details.contacts(id),
         notes: details.notes(id),
         appointments: details.appointments(id),
+        reminders: reminders.forApplication(id),
       };
     },
-    ['applications', 'status_events', 'contacts', 'notes', 'appointments'],
+    ['applications', 'status_events', 'contacts', 'notes', 'appointments', 'reminders'],
     [id],
   );
 
   if (!detail) return deleting ? null : <NotFound />;
-  const { application, events, contacts, notes, appointments } = detail;
+  const { application, events, contacts, notes, appointments, reminders } = detail;
 
   async function remove() {
     const confirmed = await confirm({
@@ -111,6 +113,25 @@ export default function ApplicationScreen() {
       ) : null}
 
       <AppointmentsSection applicationId={id} appointments={appointments} />
+      <Section
+        title="Erinnerungen"
+        action={
+          <Button
+            label="Erinnerung"
+            icon={{ ios: 'plus', android: 'add', web: 'add' }}
+            variant="secondary"
+            compact
+            onPress={() => router.push({ pathname: '/bewerbung/[id]/erinnerung', params: { id } })}
+          />
+        }>
+        {reminders.length ? (
+          <ReminderList reminders={reminders} />
+        ) : (
+          <Text style={[styles.empty, { color: theme.textSecondary }]}>
+            Keine offenen Erinnerungen. Nachhaken und Termin-Erinnerungen entstehen automatisch.
+          </Text>
+        )}
+      </Section>
       <Section title="Eckdaten">
         <Facts application={application} />
       </Section>
@@ -166,6 +187,11 @@ const styles = StyleSheet.create({
   },
   delete: {
     marginTop: 32,
+  },
+  empty: {
+    fontSize: 13,
+    lineHeight: 19,
+    padding: 15,
   },
   headerAction: {
     // Im Browser setzt der Header keinen Randabstand

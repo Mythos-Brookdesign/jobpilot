@@ -15,6 +15,13 @@
       "when": 1791623300075,
       "tag": "0001_pipeline-und-details",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791625378275,
+      "tag": "0002_erinnerungen",
+      "breakpoints": true
     }
   ]
 }
