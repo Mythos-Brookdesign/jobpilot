@@ -2,6 +2,7 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import { APPLICATION_STATUSES, PRIORITIES, WORK_MODES } from '@/domain/application';
 import { APPOINTMENT_KINDS } from '@/domain/details';
+import { REMINDER_KINDS } from '@/domain/reminders';
 
 // Zeitpunkte als ISO-8601-Text, Kalendertage als YYYY-MM-DD.
 // Nach Änderungen: `npm run db:generate -- --name …` erzeugt die nächste Migration in ./drizzle
@@ -95,6 +96,31 @@ export const appointments = sqliteTable(
   ],
 );
 
+/**
+ * Erinnerungen – Quelle der Wahrheit für die In-App-Liste und die Benachrichtigungen.
+ * Der Schlüssel dient zugleich als ID der geplanten Benachrichtigung.
+ */
+export const reminders = sqliteTable(
+  'reminders',
+  {
+    key: text('key').primaryKey(),
+    applicationId: text('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: REMINDER_KINDS }).notNull(),
+    dueAt: text('due_at').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    doneAt: text('done_at'),
+    snoozedUntil: text('snoozed_until'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    index('reminders_application_id_idx').on(table.applicationId),
+    index('reminders_due_at_idx').on(table.dueAt),
+  ],
+);
+
 /** Kleine App-Einstellungen wie zuletzt gewählter Filter oder Sortierung */
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
@@ -106,3 +132,4 @@ export type StatusEventRow = typeof statusEvents.$inferSelect;
 export type ContactRow = typeof contacts.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;
 export type AppointmentRow = typeof appointments.$inferSelect;
+export type ReminderRow = typeof reminders.$inferSelect;

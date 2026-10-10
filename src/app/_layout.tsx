@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { DATABASE_LOCKED_MESSAGE } from '@/db/client';
 import { DatabaseProvider } from '@/db/database-provider';
+import { ReminderService } from '@/features/reminders/reminder-service';
 import { useSchemeName, useTheme } from '@/theme/use-theme';
 import { ToastHost } from '@/ui/toast';
 
@@ -60,7 +61,12 @@ export default function RootLayout() {
             name="bewerbung/[id]/kontakt"
             options={{ presentation: 'modal', title: 'Kontakt' }}
           />
+          <Stack.Screen
+            name="bewerbung/[id]/erinnerung"
+            options={{ presentation: 'modal', title: 'Neue Erinnerung' }}
+          />
         </Stack>
+        <ReminderService />
         <ToastHost />
       </DatabaseProvider>
     </ThemeProvider>

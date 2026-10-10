@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLive, useRepositories } from '@/db/hooks';
 import { createDemoBackup } from '@/features/applications/demo-data';
+import { ReminderSettings } from '@/features/reminders/reminder-settings';
 import {
   exportBackupFile,
   exportCsvFile,
@@ -34,6 +35,10 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.eyebrow, { color: theme.accentText }]}>APP</Text>
         <Text style={[styles.title, { color: theme.text }]}>Einstellungen</Text>
+
+        <Section title="Erinnerungen">
+          <ReminderSettings />
+        </Section>
 
         <Section title="Daten sichern">
           <ActionRow

@@ -5,7 +5,13 @@ import { useEffect, useRef, useState } from 'react';
 const SETTLE_MS = 16;
 
 export type TableName =
-  'applications' | 'status_events' | 'contacts' | 'notes' | 'appointments' | 'settings';
+  | 'applications'
+  | 'status_events'
+  | 'contacts'
+  | 'notes'
+  | 'appointments'
+  | 'reminders'
+  | 'settings';
 
 /**
  * Liest Daten und liest sie neu, sobald sich eine der Tabellen ändert.
