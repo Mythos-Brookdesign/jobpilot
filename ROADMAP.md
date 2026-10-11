@@ -184,8 +184,8 @@ Recruiter installieren keine App. Sie klicken einen Link an und schauen 60 Sekun
 - [x] **README** als Schaufenster: GIF-Rundgang, Screenshots, Architekturdiagramm, Entscheidungen, Qualität, Anleitung
 - [x] Entscheidungen als **ADRs** in `docs/adr/`
 - [x] Deployment vorbereitet: `npm run deploy:web`, EAS Workflow `.eas/workflows/deploy-web.yml`
-- [ ] **Web-Demo auf EAS Hosting** veröffentlichen (`jobpilot.expo.app`) – braucht einmalig `eas login`
-- [ ] `origin` im expo-router-Plugin auf die Hosting-Adresse setzen, damit der Assistent auch in der installierten App funktioniert
+- [x] **Web-Demo auf EAS Hosting** veröffentlicht: [jobpilot-demo.expo.app](https://jobpilot-demo.expo.app) (`jobpilot.expo.app` war vergeben)
+- [x] `origin` im expo-router-Plugin auf die Hosting-Adresse gesetzt – der Assistent funktioniert damit auch in einer installierten App
 - [ ] **Im Portfolio** den Platzhalter „[Projektname App]“ durch jobpilot ersetzen, mit Screenshot, Live-Link und GitHub-Link
 - [ ] Optional: iOS-Screenshots ohne Expo-Go-Werkzeugknopf, TestFlight-Beta bzw. interne Android-Testversion über EAS
 
