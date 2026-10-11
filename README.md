@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/Mythos-Brookdesign/jobpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/Mythos-Brookdesign/jobpilot/actions/workflows/ci.yml)
 
-**[Live-Demo im Browser →](https://jobpilot.expo.app)** &nbsp;·&nbsp; ohne Anmeldung, mit Beispieldaten, alles bleibt im Browser
+**[Live-Demo im Browser →](https://jobpilot-demo.expo.app)** &nbsp;·&nbsp; ohne Anmeldung, mit Beispieldaten, alles bleibt im Browser
 
 <p align="center">
   <img src="docs/screenshots/rundgang.gif" width="300" alt="Rundgang durch die App: Übersicht, Bewerbungen, Detailseite, KI-Passung, Auswertung" />

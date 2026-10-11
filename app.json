@@ -26,7 +26,8 @@
           "headers": {
             "Cross-Origin-Embedder-Policy": "credentialless",
             "Cross-Origin-Opener-Policy": "same-origin"
-          }
+          },
+          "origin": "https://jobpilot-demo.expo.app/"
         }
       ],
       [
@@ -55,6 +56,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "owner": "madenar76",
+    "extra": {
+      "eas": {
+        "projectId": "9fd57220-fe02-419a-90e2-47e7221f651c"
+      }
     }
   }
 }
