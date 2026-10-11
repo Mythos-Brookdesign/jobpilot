@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 
@@ -9,15 +8,16 @@ import {
   ACTION_SNOOZE,
   type NotificationData,
 } from '@/features/reminders/notifications';
+import { Notifications } from '@/features/reminders/notifications-module';
 import { NOTIFICATION_PREFIX } from '@/features/reminders/schedule-plan';
 
 /**
  * Reagiert auf Benachrichtigungen – auch wenn die App erst durch das Antippen gestartet wurde:
  * „Erledigt“ und „Später“ speichern direkt, ein Tippen öffnet die Bewerbung.
  */
-export function useNotificationResponses(repositories: Repositories) {
+function useResponses(repositories: Repositories) {
   const router = useRouter();
-  const response = Notifications.useLastNotificationResponse();
+  const response = Notifications!.useLastNotificationResponse();
 
   useEffect(() => {
     if (!response) return;
@@ -34,6 +34,12 @@ export function useNotificationResponses(repositories: Repositories) {
       router.push({ pathname: '/bewerbung/[id]', params: { id: data.applicationId } });
     }
     // Nicht beim nächsten Rendern erneut verarbeiten
-    Notifications.clearLastNotificationResponse();
+    Notifications!.clearLastNotificationResponse();
   }, [response, repositories, router]);
 }
+
+/** Ohne Benachrichtigungsmodul (Expo Go auf Android) gibt es nichts zu verarbeiten */
+function useNothing(_repositories: Repositories) {}
+
+// Die Auswahl steht beim Laden fest, die Hook-Reihenfolge bleibt also stabil
+export const useNotificationResponses = Notifications ? useResponses : useNothing;

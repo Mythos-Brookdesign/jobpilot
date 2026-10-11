@@ -18,4 +18,4 @@ Erinnerungen hängen von vielen Dingen ab: Status, letzte Statusänderung, Termi
 
 - Mehrfaches Ausführen ändert nichts – keine Duplikate, keine Endlosschleife (der Abgleich meldet, ob er etwas geschrieben hat).
 - Keine Sonderfall-Logik beim Bearbeiten von Terminen oder Status; alles ergibt sich aus dem neuen Zustand.
-- Lokale Benachrichtigungen statt Push: kein Server nötig, funktioniert auch in Expo Go. Im Browser erscheinen fällige Erinnerungen in der App.
+- Lokale Benachrichtigungen statt Push: kein Server nötig. Im Browser und in Expo Go auf Android (wo `expo-notifications` seit SDK 53 schon beim Import abbricht und deshalb nicht geladen wird) erscheinen fällige Erinnerungen nur in der App.
