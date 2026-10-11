@@ -8,6 +8,7 @@
     "scheme": "jobpilot",
     "userInterfaceStyle": "automatic",
     "android": {
+      "package": "de.brookdesign.jobpilot",
       "adaptiveIcon": {
         "backgroundColor": "#176B4A",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
