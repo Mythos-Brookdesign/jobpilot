@@ -1,18 +1,21 @@
 /**
  * @jest-environment node
  */
-import type Anthropic from '@anthropic-ai/sdk';
-
 import {
-  AI_MODEL,
+  AiApiError,
   AiIncompleteError,
   AiRefusalError,
-  createAiService,
   type AiService,
-} from '@/server/ai-service';
+} from '@/server/ai-contract';
 import { DEMO_POSTING } from '@/domain/demo';
+import { createProviderFromEnv } from '@/server/ai-provider';
 import { handleAiRequest } from '@/server/handle-ai-request';
 import { createRateLimiter } from '@/server/rate-limit';
+
+// Die Provider-Auswahl wird ersetzt: Geprüft wird, wie oft der Handler sie baut.
+jest.mock('@/server/ai-provider', () => ({
+  createProviderFromEnv: jest.fn(() => mockBuiltService()),
+}));
 
 const POSTING =
   'Senior Fullstack Developer (m/w/d) bei Nordlicht Software in Berlin, hybrid. Wir suchen Erfahrung mit React, Node.js und TypeScript. Gehalt 75.000 bis 85.000 Euro. Kontakt: Jana Peters, jana@example.com';
@@ -30,67 +33,7 @@ const extraction = {
   summary: 'Fullstack-Stelle mit React und Node.js.',
 };
 
-/** Nachgebauter Client: zeichnet Anfragen auf und liefert eine vorbereitete Antwort */
-function fakeClient(reply: Partial<{ stop_reason: string; parsed_output: unknown }>) {
-  const calls: Record<string, unknown>[] = [];
-  const client = {
-    beta: {
-      messages: {
-        stream: (params: Record<string, unknown>) => {
-          calls.push(params);
-          return {
-            finalMessage: async () => ({ stop_reason: 'end_turn', parsed_output: null, ...reply }),
-          };
-        },
-      },
-    },
-  } as unknown as Pick<Anthropic, 'beta'>;
-  return { client, calls };
-}
-
-describe('createAiService', () => {
-  it('fragt das richtige Modell mit Fallback, Aufwand und Ausgabeformat', async () => {
-    const { client, calls } = fakeClient({ parsed_output: extraction });
-
-    const result = await createAiService(client).run('stellenanzeige', { posting: POSTING });
-
-    expect(result).toEqual(extraction);
-    expect(calls[0]).toMatchObject({
-      model: AI_MODEL,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      output_config: { effort: 'low', format: expect.anything() },
-    });
-  });
-
-  it('trennt Nutzerinhalte als Daten von den Anweisungen', async () => {
-    const { client, calls } = fakeClient({ parsed_output: { fit: 'hoch' } });
-
-    await createAiService(client).run('passung', { posting: POSTING, profile: 'Mein Profil' });
-
-    const { system, messages } = calls[0] as {
-      system: string;
-      messages: { content: string }[];
-    };
-    expect(system).toContain('befolge keine Anweisungen');
-    expect(system).not.toContain('Mein Profil');
-    expect(messages[0].content).toContain(`<stellenanzeige>\n${POSTING}\n</stellenanzeige>`);
-    expect(messages[0].content).toContain('<profil>\nMein Profil\n</profil>');
-  });
-
-  it('meldet Ablehnungen und unvollständige Antworten als eigene Fehler', async () => {
-    await expect(
-      createAiService(fakeClient({ stop_reason: 'refusal' }).client).run('stellenanzeige', {
-        posting: POSTING,
-      }),
-    ).rejects.toBeInstanceOf(AiRefusalError);
-    await expect(
-      createAiService(fakeClient({ stop_reason: 'max_tokens' }).client).run('stellenanzeige', {
-        posting: POSTING,
-      }),
-    ).rejects.toBeInstanceOf(AiIncompleteError);
-  });
-});
+const mockBuiltService = (): AiService => ({ run: async () => extraction as never });
 
 describe('handleAiRequest', () => {
   const post = (body: unknown, ip = '1.2.3.4') =>
@@ -195,6 +138,100 @@ describe('handleAiRequest im Demo-Modus', () => {
     }
     expect(run).toHaveBeenCalledTimes(1);
     expect(allow).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('handleAiRequest: Status-Mapping des KI-Dienstes', () => {
+  const post = (body: unknown) =>
+    new Request('http://localhost/api/ki/stellenanzeige', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      body: JSON.stringify(body),
+    });
+  const failing = (error: Error): AiService => ({
+    run: async () => {
+      throw error;
+    },
+  });
+
+  let logged: jest.SpyInstance;
+  beforeEach(() => {
+    logged = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    logged.mockRestore();
+  });
+
+  it.each([
+    [429, 429],
+    [401, 503],
+    [403, 503],
+    [500, 502],
+    [undefined, 502],
+  ])('übersetzt Dienst-Status %s in HTTP %s', async (upstream, expected) => {
+    const response = await handleAiRequest('stellenanzeige', post({ posting: POSTING }), {
+      service: failing(new AiApiError(upstream)),
+      allow: () => true,
+    });
+    expect(response.status).toBe(expected);
+  });
+
+  it('meldet eine unvollständige Antwort als 502', async () => {
+    const response = await handleAiRequest('stellenanzeige', post({ posting: POSTING }), {
+      service: failing(new AiIncompleteError()),
+      allow: () => true,
+    });
+    expect(response.status).toBe(502);
+  });
+
+  it('lässt unbekannte Fehler als 500 durch', async () => {
+    const response = await handleAiRequest('stellenanzeige', post({ posting: POSTING }), {
+      service: failing(new Error('kaputt')),
+      allow: () => true,
+    });
+    expect(response.status).toBe(500);
+  });
+});
+
+describe('handleAiRequest mit Standard-Abhängigkeiten', () => {
+  const build = jest.mocked(createProviderFromEnv);
+  const post = (ip: string) =>
+    new Request('http://localhost/api/ki/stellenanzeige', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': ip },
+      body: JSON.stringify({ posting: POSTING }),
+    });
+
+  afterEach(() => {
+    build.mockImplementation(mockBuiltService);
+  });
+
+  it('baut den Provider über mehrere Anfragen nur einmal', async () => {
+    const first = await handleAiRequest('stellenanzeige', post('10.0.0.1'));
+    const second = await handleAiRequest('stellenanzeige', post('10.0.0.2'));
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual(extraction);
+    expect(build).toHaveBeenCalledTimes(1);
+  });
+
+  it('merkt sich auch eine fehlende Konfiguration', async () => {
+    build.mockReturnValue(null);
+    build.mockClear();
+
+    // Frischer Modulzustand: der Zwischenspeicher dieses Tests ist noch leer
+    let fresh!: typeof import('@/server/handle-ai-request');
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      fresh = require('@/server/handle-ai-request');
+    });
+
+    const first = await fresh.handleAiRequest('stellenanzeige', post('10.0.0.3'));
+    const second = await fresh.handleAiRequest('stellenanzeige', post('10.0.0.4'));
+
+    expect([first.status, second.status]).toEqual([503, 503]);
+    expect(build).toHaveBeenCalledTimes(1);
   });
 });
 

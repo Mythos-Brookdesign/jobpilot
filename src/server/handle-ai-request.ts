@@ -1,13 +1,12 @@
-import Anthropic from '@anthropic-ai/sdk';
-
 import { requestSchemas, type AiAction } from '@/domain/ai';
 import { isDemoRequest } from '@/domain/demo';
 import {
+  AiApiError,
   AiIncompleteError,
   AiRefusalError,
-  createAiService,
   type AiService,
-} from '@/server/ai-service';
+} from '@/server/ai-contract';
+import { createProviderFromEnv } from '@/server/ai-provider';
 import { createRateLimiter } from '@/server/rate-limit';
 
 const HOUR = 60 * 60 * 1000;
@@ -24,13 +23,23 @@ type Dependencies = {
   demoCache?: Map<string, unknown>;
 };
 
-// Client erst bei Bedarf anlegen – ohne Key soll der Server trotzdem starten
+// Dieses Modul kennt keinen Anbieter: Welcher Service aus der Server-Konfiguration entsteht,
+// entscheidet `createProviderFromEnv()` (AI_PROVIDER). Fehlt die Konfiguration, ist der
+// Service null und der Assistent antwortet mit 503.
+// Der Service entsteht einmal je Prozess und bleibt dann bestehen: Der SDK-Client wird über
+// alle Anfragen wiederverwendet (Verbindungen und TLS-Sitzungen), und eine unbekannte
+// Konfiguration wird einmal geloggt statt bei jeder Anfrage. undefined = noch nicht gebaut,
+// null = bewusst kein Provider (wird ebenfalls gemerkt).
 let defaultService: AiService | null | undefined;
 function defaultDependencies(): Dependencies {
   if (defaultService === undefined) {
-    defaultService = process.env.ANTHROPIC_API_KEY ? createAiService(new Anthropic()) : null;
+    defaultService = createProviderFromEnv();
   }
-  return { service: defaultService, allow: limiter.allow, demoCache: DEMO ? demoCache : undefined };
+  return {
+    service: defaultService,
+    allow: limiter.allow,
+    demoCache: DEMO ? demoCache : undefined,
+  };
 }
 
 const errorResponse = (status: number, error: string) => Response.json({ error }, { status });
@@ -81,18 +90,21 @@ export async function handleAiRequest(
     if (error instanceof AiIncompleteError) {
       return errorResponse(502, 'Die Antwort war unvollständig. Bitte versuche es noch einmal.');
     }
-    if (error instanceof Anthropic.RateLimitError) {
-      return errorResponse(429, 'Der KI-Dienst ist gerade ausgelastet. Bitte gleich noch einmal.');
-    }
-    if (error instanceof Anthropic.AuthenticationError) {
-      console.error('Claude API: API-Key ungültig');
-      return errorResponse(
-        503,
-        'Der KI-Assistent ist auf diesem Server nicht richtig eingerichtet.',
-      );
-    }
-    if (error instanceof Anthropic.APIError) {
-      console.error(`Claude API-Fehler ${error.status}:`, error.message);
+    if (error instanceof AiApiError) {
+      if (error.status === 429) {
+        return errorResponse(
+          429,
+          'Der KI-Dienst ist gerade ausgelastet. Bitte gleich noch einmal.',
+        );
+      }
+      if (error.status === 401 || error.status === 403) {
+        console.error(`KI-Dienst: API-Key ungültig (Status ${error.status})`);
+        return errorResponse(
+          503,
+          'Der KI-Assistent ist auf diesem Server nicht richtig eingerichtet.',
+        );
+      }
+      console.error(`KI-Dienst-Fehler ${error.status}:`, error.message);
       return errorResponse(502, 'Der KI-Dienst hat einen Fehler gemeldet. Bitte später erneut.');
     }
     console.error('KI-Anfrage fehlgeschlagen:', error);
