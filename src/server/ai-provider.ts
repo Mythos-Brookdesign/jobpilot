@@ -14,7 +14,8 @@ type AiEnv = Record<string, string | undefined>;
  * die App und der Server starten trotzdem normal.
  */
 export function createProviderFromEnv(env: AiEnv = process.env): AiService | null {
-  const provider = env.AI_PROVIDER?.trim() || 'anthropic';
+  // Großschreibung und Leerzeichen ignorieren: ein Kopierfehler soll nicht zur 503 führen
+  const provider = (env.AI_PROVIDER?.trim() || 'anthropic').toLowerCase();
 
   if (provider === 'anthropic') {
     const apiKey = env.ANTHROPIC_API_KEY?.trim();
