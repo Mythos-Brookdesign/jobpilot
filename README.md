@@ -1,6 +1,6 @@
 # jobpilot
 
-**Bewerbungen im Blick behalten** – eine App für die eigene Jobsuche, von der ersten Anzeige bis zum Angebot. Für iOS, Android und Web, mit lokalem Datenspeicher, Erinnerungen und einem KI-Assistenten auf Basis von Claude.
+**Bewerbungen im Blick behalten** – eine App für die eigene Jobsuche, von der ersten Anzeige bis zum Angebot. Für iOS, Android und Web, mit lokalem Datenspeicher, Erinnerungen und einem KI-Assistenten, der auf dem Server mit einem KI-Modell spricht.
 
 [![CI](https://github.com/Mythos-Brookdesign/jobpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/Mythos-Brookdesign/jobpilot/actions/workflows/ci.yml)
 
@@ -15,7 +15,7 @@
 - **Pipeline** von „Gemerkt“ über Screening und Fachgespräch bis zum Angebot; jeder Statuswechsel landet im Verlauf
 - **Detailseite** je Bewerbung: Eckdaten (Gehalt, Arbeitsmodell, Quelle, Link), Termine, Kontakte, Notizen, Verlauf
 - **Erinnerungen** als Benachrichtigung: nachhaken, wenn sich nichts tut, Termine am Vortag und eine Stunde vorher, Dankeschön danach – mit „Erledigt“ und „Später“ direkt in der Benachrichtigung
-- **KI-Assistent (Claude):** Stellenanzeige einfügen und Felder vorausfüllen lassen, Passung zum eigenen Profil, Gesprächsvorbereitung, Entwürfe für Anschreiben, Nachfass- und Dankes-Mail
+- **KI-Assistent:** Stellenanzeige einfügen und Felder vorausfüllen lassen, Passung zum eigenen Profil, Gesprächsvorbereitung, Entwürfe für Anschreiben, Nachfass- und Dankes-Mail
 - **Auswertung:** Funnel nach höchster erreichter Stufe, Antwortquote, Zeit bis zur Rückmeldung, Erfolg je Quelle, Aktivität pro Woche
 - **Board-Ansicht** auf breiten Bildschirmen, Hell- und Dunkelmodus, native Tabs und Datums-Picker
 - **Offline und privat:** alle Daten lokal in SQLite; Backup als JSON, Export als CSV
@@ -39,7 +39,7 @@ flowchart LR
     UI --> AiClient["KI-Client<br/>(zod-geprüft)"]
   end
   subgraph Server["Server (EAS Hosting)"]
-    Routes["API-Routen<br/>/api/ki/*"] --> Claude["Claude API<br/>Structured Outputs"]
+    Routes["API-Routen<br/>/api/ki/*"] --> Model["KI-Modell<br/>Structured Outputs"]
   end
   AiClient -- "HTTPS" --> Routes
   Domain["domain/<br/>reine Logik"] -.-> UI
@@ -60,19 +60,20 @@ flowchart LR
 | [ADR 3](docs/adr/0003-erinnerungen-als-idempotenter-abgleich.md) | Erinnerungen als idempotenter Abgleich von Regeln, Datenbank und Benachrichtigungen |
 | [ADR 4](docs/adr/0004-patches-fuer-expo-sqlite.md)               | Zwei Fehler in expo-sqlite (Web) gefunden und per Patch behoben                     |
 | [ADR 5](docs/adr/0005-ki-ueber-eigene-api-routen.md)             | KI über eigene API-Routen, Structured Outputs, abgesicherte öffentliche Demo        |
+| [ADR 6](docs/adr/0006-ki-provider-auswahl.md)                    | Wechselbarer KI-Provider (Anthropic oder OpenAI-kompatibel) über `AI_PROVIDER`      |
 
 ## Tech-Stack
 
 - [Expo](https://expo.dev) SDK 57, React Native 0.86, React 19 mit React Compiler, Expo Router
 - SQLite über `expo-sqlite` und [Drizzle ORM](https://orm.drizzle.team), im Browser per WebAssembly
 - `expo-notifications` für lokale Erinnerungen
-- [Claude API](https://docs.claude.com) (Claude Opus 5.5) über Expo Router API Routes, zod für alle Schnittstellen
+- KI-Assistent über Expo Router API Routes; welcher Dienst antwortet, legt `AI_PROVIDER` fest (siehe [KI-Assistent einrichten](#ki-assistent-einrichten)); zod für alle Schnittstellen
 - TypeScript (strict), Jest mit `jest-expo`, React Native Testing Library, better-sqlite3
 - ESLint, Prettier, GitHub Actions; Auslieferung über EAS Hosting
 
 ## Qualität
 
-- **124 Tests**: Domain-Logik, Repositories gegen echtes SQLite, eine Migration mit Daten im alten Format, Erinnerungsregeln und -abgleich, KI-Server mit nachgebautem Anthropic-Client, Demo-Schutz, Hooks und Komponenten
+- **152 Tests**: Domain-Logik, Repositories gegen echtes SQLite, eine Migration mit Daten im alten Format, Erinnerungsregeln und -abgleich, KI-Server mit nachgebauten Provider-Clients, Demo-Schutz, Hooks und Komponenten
 - CI prüft Lint, Typecheck und Tests bei jedem Push und Pull Request
 - Barrierefreiheit: Labels und Rollen für Screenreader, Kontraste nach WCAG AA (Status- und Diagrammfarben rechnerisch geprüft)
 
@@ -84,7 +85,7 @@ src/
   domain/       reine Logik ohne React
   db/           Schema, Repositories, Datenbankanbindung, Live-Abfragen
   features/     applications/, insights/, reminders/, ai/, demo/, data-transfer/
-  server/       nur für API-Routen: Claude-Anbindung, Prompts, Rate-Limit
+  server/       nur für API-Routen: KI-Provider, Prompts, Rate-Limit
   ui/           wiederverwendbare Bausteine
   theme/        Farben für Hell und Dunkel
 drizzle/        SQL-Migrationen
@@ -103,12 +104,30 @@ npm start          # Dev-Server, dann i (iOS) oder a (Android) – oder QR-Code 
 
 ### KI-Assistent einrichten
 
+Der Assistent läuft nur auf dem Server und spricht mit genau einem KI-Dienst. Welcher, legt
+`AI_PROVIDER` in `.env.local` fest:
+
+- **`anthropic`** (Standard): `ANTHROPIC_API_KEY` aus der Anthropic-Konsole eintragen.
+- **`openai`**: `OPENAI_API_KEY` aus der OpenAI-Plattform eintragen. `OPENAI_MODEL` wählt das
+  Modell (Standard: `gpt-6-astra`); mit `OPENAI_BASE_URL` lässt sich ein OpenAI-kompatibler
+  Endpunkt angeben, etwa ein anderer Anbieter oder ein Gateway.
+
 ```bash
-cp .env.example .env.local   # ANTHROPIC_API_KEY eintragen
+cp .env.example .env.local   # AI_PROVIDER und den passenden Key eintragen
 npm start                    # der Dev-Server stellt auch die API-Routen bereit
 ```
 
-Ohne Key funktioniert die App normal, nur der Assistent meldet, dass er nicht eingerichtet ist.
+Ohne Key funktioniert die App normal, nur der Assistent meldet, dass er nicht eingerichtet
+ist. Ein unbekannter `AI_PROVIDER` wird geloggt und wie ein fehlender Key behandelt.
+
+Beide Standardmodelle erfüllen laut Herstellerdoku die Anforderungen des Assistenten:
+Streaming und vom Schema erzwungene Antworten (bei Anthropic `output_config.format`, bei
+OpenAI `response_format` mit `json_schema`). Wie hilfreich die Antworten für die eigene
+Bewerbung sind, prüfen die automatisierten Tests nicht – vor dem produktiven Einsatz einmal
+mit der eigenen Anzeige und dem eigenen Profil ausprobieren. Gegen einen echten
+OpenAI-kompatiblen Endpunkt wurde nicht getestet; Schema-Treue und `reasoning_effort` prüft der
+Betreiber beim Einrichten selbst. Kleinere, günstigere Modelle funktionieren, halten die
+vorgegebenen Schemas aber erfahrungsgemäß weniger zuverlässig ein.
 
 ### Web-Version
 
